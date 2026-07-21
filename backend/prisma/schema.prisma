@@ -1,0 +1,81 @@
+// Prisma schema for AI-powered Database Schema Designer
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  name         String
+  passwordHash String    @map("password_hash")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  projects      Project[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  revoked   Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  ownerId     String   @map("owner_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  owner  User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  schema Schema?
+
+  @@index([ownerId])
+  @@map("projects")
+}
+
+/// One active DBML schema document per project (1:1). Historical states
+/// are kept in SchemaVersion for undo/redo and audit-free history.
+model Schema {
+  id        String   @id @default(uuid())
+  projectId String   @unique @map("project_id")
+  dbml      String   @default("")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  project  Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versions SchemaVersion[]
+
+  @@map("schemas")
+}
+
+model SchemaVersion {
+  id        String   @id @default(uuid())
+  schemaId  String   @map("schema_id")
+  dbml      String
+  label     String? // e.g. "AI generated", "manual save"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  schema Schema @relation(fields: [schemaId], references: [id], onDelete: Cascade)
+
+  @@index([schemaId, createdAt])
+  @@map("schema_versions")
+}
