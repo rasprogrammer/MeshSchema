@@ -23,7 +23,7 @@ export function createApp(): Application {
     app.use(morgan("dev"));
   }
 
-  app.use("/api", routes);
+  app.use(env.apiPrefix, routes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
