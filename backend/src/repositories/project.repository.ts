@@ -1,5 +1,5 @@
 import { prisma } from "../config/prisma";
-import { Project } from "@prisma/client";
+import { Project } from "../config/prisma";
 
 export const projectRepository = {
   findAllByOwner(ownerId: string): Promise<Project[]> {

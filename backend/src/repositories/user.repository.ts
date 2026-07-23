@@ -1,5 +1,5 @@
 import { prisma } from "../config/prisma";
-import { User } from "@prisma/client";
+import { User } from "../config/prisma";
 
 /**
  * Data access layer for users. No business logic lives here — only

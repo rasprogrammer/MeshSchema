@@ -1,5 +1,5 @@
 import { prisma } from "../config/prisma";
-import { Schema, SchemaVersion } from "@prisma/client";
+import { Schema, SchemaVersion } from "../config/prisma";
 
 export const schemaRepository = {
   findByProjectId(projectId: string): Promise<Schema | null> {

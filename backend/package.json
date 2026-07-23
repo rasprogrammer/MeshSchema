@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "@dbml/core": "^3.5.7",
-    "@prisma/client": "^5.20.0",
+    "@prisma/adapter-pg": "^7.9.0",
+    "@prisma/client": "^7.9.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -24,6 +25,7 @@
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "pg": "^8.22.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -34,10 +36,11 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.16.10",
+    "@types/pg": "^8.20.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "eslint": "^8.57.1",
-    "prisma": "^5.20.0",
+    "prisma": "^7.9.0",
     "tsx": "^4.19.1",
     "typescript": "^5.6.2"
   }
