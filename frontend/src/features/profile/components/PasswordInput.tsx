@@ -1,18 +1,26 @@
 "use client";
 
 import { Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
+import { HtmlHTMLAttributes, useState } from "react";
 
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 
-export function PasswordInput() {
+interface PasswordInputProps {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+export function PasswordInput({ value, onChange, ...props} : PasswordInputProps) {
   const [show, setShow] = useState(false);
 
   return (
     <div className="relative">
       <Input
         type={show ? "text" : "password"}
+        value={value}
+        onChange={onChange}
+        {...props}
       />
 
       <Button

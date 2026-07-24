@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { ProfilePayload } from "../types";
+import { ProfilePayload, updatePasswordPayload } from "../types";
 import { profileApi } from "../services/profile.service";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/apiClient";
@@ -26,6 +26,22 @@ export function useProfile() {
         },
         onError: (error) => {
             toast({title : "Profile update failed", description: getErrorMessage(error), variant: "destructive"});
+        }
+    })
+}
+
+export function usePasswordUpdate(options?: { onSuccess?: () => void }) {
+
+    const { toast } = useToast();
+
+    return useMutation({
+        mutationFn: (payload: updatePasswordPayload) => profileApi.updatePassword(payload),
+        onSuccess: (data) => {
+            toast({ title: "Password updated" });
+            options?.onSuccess?.();
+        },
+        onError: (error) => {
+            toast({ title : "Password update failed", description: getErrorMessage(error), variant: "destructive"})
         }
     })
 }

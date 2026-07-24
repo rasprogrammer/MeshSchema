@@ -17,4 +17,13 @@ export const userRepository = {
   create(data: { name: string; email: string; passwordHash: string }): Promise<User> {
     return prisma.user.create({ data });
   },
+
+  updatePassword(data: { passwordHash: string, userId: string}): Promise<User | null> {
+    return prisma.user.update({
+      where: { id : data.userId },
+      data: {
+        passwordHash : data.passwordHash
+      }
+    })
+  },
 };

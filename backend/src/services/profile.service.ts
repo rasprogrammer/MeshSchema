@@ -1,5 +1,8 @@
 import { prisma } from "@/config/prisma";
-import { ProfileUpdateInput } from "@/validators/profile.validator";
+import { userRepository } from "@/repositories/user.repository";
+import { BadRequestError, UnauthorizedError } from "@/utils/AppError";
+import { comparePassword, hashPassword } from "@/utils/password";
+import { ProfileUpdateInput, UpdatePasswordInput } from "@/validators/profile.validator";
 
 
 export const profileService = {
@@ -15,5 +18,33 @@ export const profileService = {
         });
 
         return { user }; 
+    },
+
+    async updatePassword(userId: string, input: UpdatePasswordInput) {
+
+        const { currentPassword, newPassword, confirmPassword } = input;
+
+        const user = await userRepository.findById(userId);
+        if (!user) {
+          throw new UnauthorizedError("User not exists");
+        }
+
+        const valid = await comparePassword(currentPassword, user.passwordHash);
+        if (!valid) {
+            throw new UnauthorizedError("Invalid password");
+        }
+
+        if (newPassword !== confirmPassword) {
+            throw new BadRequestError("Confirm Password do not match");
+        }
+
+        const passwordHash = await hashPassword(input.newPassword);
+
+        await userRepository.updatePassword({
+            passwordHash,
+            userId
+        });
+
+        return { message: "Password updated"};
     }
 }
