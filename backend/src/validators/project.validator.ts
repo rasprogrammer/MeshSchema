@@ -1,8 +1,11 @@
 import { z } from "zod";
 
+export const projectNameSchema = z.string().min(1, "Name is required").max(120);
+export const projectDescriptionSchema = z.string().max(500).optional();
+
 export const createProjectSchema = z.object({
-  name: z.string().min(1, "Name is required").max(120),
-  description: z.string().max(500).optional(),
+  name: projectNameSchema,
+  description: projectDescriptionSchema
 });
 
 export const updateProjectSchema = z.object({
@@ -14,5 +17,12 @@ export const projectIdParamSchema = z.object({
   id: z.string().uuid("Invalid project id"),
 });
 
+export const createWithStarterTemplateSchema = z.object({
+  templateId: z.string().uuid("Invalid template id").nonempty(),
+  name: projectNameSchema,
+  description: projectDescriptionSchema
+})
+
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
+export type createWithStarterTemplateInput = z.infer<typeof createWithStarterTemplateSchema>;

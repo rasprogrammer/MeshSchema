@@ -16,7 +16,7 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/shared/ui/dialog";
-import { useCreateProject } from "../hooks/useProjects";
+import { useCreateProject } from "../../hooks/useProjects";
 
 export function CreateProjectDialog() {
   const [open, setOpen] = useState(false);

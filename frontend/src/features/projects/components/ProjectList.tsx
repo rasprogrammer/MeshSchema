@@ -4,7 +4,7 @@ import { FolderKanban } from "lucide-react";
 import { useProjectsList } from "../hooks/useProjects";
 import { ProjectCard } from "./ProjectCard";
 import { Skeleton } from "@/shared/ui/skeleton";
-import { CreateProjectDialog } from "./CreateProjectDialog";
+import { CreateProjectDialog } from "./dialogs/CreateProjectDialog";
 
 export function ProjectList() {
   const { data: projects, isLoading, isError } = useProjectsList();

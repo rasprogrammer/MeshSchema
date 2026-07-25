@@ -398,8 +398,10 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   User: 'User',
+  OAuthAccount: 'OAuthAccount',
   RefreshToken: 'RefreshToken',
   Project: 'Project',
+  StarterTemplateSchema: 'StarterTemplateSchema',
   Schema: 'Schema',
   SchemaVersion: 'SchemaVersion'
 } as const
@@ -417,7 +419,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "refreshToken" | "project" | "schema" | "schemaVersion"
+    modelProps: "user" | "oAuthAccount" | "refreshToken" | "project" | "starterTemplateSchema" | "schema" | "schemaVersion"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -492,6 +494,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.UserCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.UserCountAggregateOutputType> | number
+        }
+      }
+    }
+    OAuthAccount: {
+      payload: Prisma.$OAuthAccountPayload<ExtArgs>
+      fields: Prisma.OAuthAccountFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.OAuthAccountFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.OAuthAccountFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload>
+        }
+        findFirst: {
+          args: Prisma.OAuthAccountFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.OAuthAccountFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload>
+        }
+        findMany: {
+          args: Prisma.OAuthAccountFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload>[]
+        }
+        create: {
+          args: Prisma.OAuthAccountCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload>
+        }
+        createMany: {
+          args: Prisma.OAuthAccountCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.OAuthAccountCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload>[]
+        }
+        delete: {
+          args: Prisma.OAuthAccountDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload>
+        }
+        update: {
+          args: Prisma.OAuthAccountUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload>
+        }
+        deleteMany: {
+          args: Prisma.OAuthAccountDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.OAuthAccountUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.OAuthAccountUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload>[]
+        }
+        upsert: {
+          args: Prisma.OAuthAccountUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OAuthAccountPayload>
+        }
+        aggregate: {
+          args: Prisma.OAuthAccountAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateOAuthAccount>
+        }
+        groupBy: {
+          args: Prisma.OAuthAccountGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.OAuthAccountGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.OAuthAccountCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.OAuthAccountCountAggregateOutputType> | number
         }
       }
     }
@@ -640,6 +716,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.ProjectCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.ProjectCountAggregateOutputType> | number
+        }
+      }
+    }
+    StarterTemplateSchema: {
+      payload: Prisma.$StarterTemplateSchemaPayload<ExtArgs>
+      fields: Prisma.StarterTemplateSchemaFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.StarterTemplateSchemaFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StarterTemplateSchemaPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.StarterTemplateSchemaFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StarterTemplateSchemaPayload>
+        }
+        findFirst: {
+          args: Prisma.StarterTemplateSchemaFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StarterTemplateSchemaPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.StarterTemplateSchemaFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StarterTemplateSchemaPayload>
+        }
+        findMany: {
+          args: Prisma.StarterTemplateSchemaFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StarterTemplateSchemaPayload>[]
+        }
+        create: {
+          args: Prisma.StarterTemplateSchemaCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StarterTemplateSchemaPayload>
+        }
+        createMany: {
+          args: Prisma.StarterTemplateSchemaCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.StarterTemplateSchemaCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StarterTemplateSchemaPayload>[]
+        }
+        delete: {
+          args: Prisma.StarterTemplateSchemaDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StarterTemplateSchemaPayload>
+        }
+        update: {
+          args: Prisma.StarterTemplateSchemaUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StarterTemplateSchemaPayload>
+        }
+        deleteMany: {
+          args: Prisma.StarterTemplateSchemaDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.StarterTemplateSchemaUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.StarterTemplateSchemaUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StarterTemplateSchemaPayload>[]
+        }
+        upsert: {
+          args: Prisma.StarterTemplateSchemaUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StarterTemplateSchemaPayload>
+        }
+        aggregate: {
+          args: Prisma.StarterTemplateSchemaAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateStarterTemplateSchema>
+        }
+        groupBy: {
+          args: Prisma.StarterTemplateSchemaGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.StarterTemplateSchemaGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.StarterTemplateSchemaCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.StarterTemplateSchemaCountAggregateOutputType> | number
         }
       }
     }
@@ -835,11 +985,27 @@ export const UserScalarFieldEnum = {
   email: 'email',
   name: 'name',
   passwordHash: 'passwordHash',
+  avatarUrl: 'avatarUrl',
+  emailVerifiedAt: 'emailVerifiedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const OAuthAccountScalarFieldEnum = {
+  id: 'id',
+  provider: 'provider',
+  providerAccountId: 'providerAccountId',
+  accessToken: 'accessToken',
+  refreshToken: 'refreshToken',
+  expiresAt: 'expiresAt',
+  userId: 'userId',
+  createdAt: 'createdAt'
+} as const
+
+export type OAuthAccountScalarFieldEnum = (typeof OAuthAccountScalarFieldEnum)[keyof typeof OAuthAccountScalarFieldEnum]
 
 
 export const RefreshTokenScalarFieldEnum = {
@@ -864,6 +1030,16 @@ export const ProjectScalarFieldEnum = {
 } as const
 
 export type ProjectScalarFieldEnum = (typeof ProjectScalarFieldEnum)[keyof typeof ProjectScalarFieldEnum]
+
+
+export const StarterTemplateSchemaScalarFieldEnum = {
+  id: 'id',
+  dbml: 'dbml',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type StarterTemplateSchemaScalarFieldEnum = (typeof StarterTemplateSchemaScalarFieldEnum)[keyof typeof StarterTemplateSchemaScalarFieldEnum]
 
 
 export const SchemaScalarFieldEnum = {
@@ -1118,8 +1294,10 @@ export interface PrismaClientOptionsWithAdapter extends PrismaClientBaseOptions 
 export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaClientOptionsWithAdapter
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
+  oAuthAccount?: Prisma.OAuthAccountOmit
   refreshToken?: Prisma.RefreshTokenOmit
   project?: Prisma.ProjectOmit
+  starterTemplateSchema?: Prisma.StarterTemplateSchemaOmit
   schema?: Prisma.SchemaOmit
   schemaVersion?: Prisma.SchemaVersionOmit
 }

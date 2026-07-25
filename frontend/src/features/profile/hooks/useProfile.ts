@@ -36,7 +36,7 @@ export function usePasswordUpdate(options?: { onSuccess?: () => void }) {
 
     return useMutation({
         mutationFn: (payload: updatePasswordPayload) => profileApi.updatePassword(payload),
-        onSuccess: (data) => {
+        onSuccess: () => {
             toast({ title: "Password updated" });
             options?.onSuccess?.();
         },

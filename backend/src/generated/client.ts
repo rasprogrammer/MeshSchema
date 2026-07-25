@@ -45,6 +45,11 @@ export { Prisma }
  */
 export type User = Prisma.UserModel
 /**
+ * Model OAuthAccount
+ * 
+ */
+export type OAuthAccount = Prisma.OAuthAccountModel
+/**
  * Model RefreshToken
  * 
  */
@@ -54,6 +59,11 @@ export type RefreshToken = Prisma.RefreshTokenModel
  * 
  */
 export type Project = Prisma.ProjectModel
+/**
+ * Model StarterTemplateSchema
+ * 
+ */
+export type StarterTemplateSchema = Prisma.StarterTemplateSchemaModel
 /**
  * Model Schema
  * One active DBML schema document per project (1:1). Historical states

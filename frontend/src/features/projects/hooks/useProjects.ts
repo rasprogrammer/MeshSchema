@@ -6,7 +6,7 @@ import { CreateProjectPayload, UpdateProjectPayload } from "../types";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/apiClient";
 
-const PROJECTS_KEY = ["projects"] as const;
+export const PROJECTS_KEY = ["projects"] as const;
 
 export function useProjectsList() {
   return useQuery({ queryKey: PROJECTS_KEY, queryFn: projectApi.list });

@@ -8,6 +8,7 @@ export interface Project {
 }
 
 export interface CreateProjectPayload {
+  templateId: string;
   name: string;
   description?: string;
 }

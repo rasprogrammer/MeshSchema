@@ -10,8 +10,8 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/shared/ui/dialog";
-import { useDeleteProject } from "../hooks/useProjects";
-import { Project } from "../types";
+import { useDeleteProject } from "../../hooks/useProjects";
+import { Project } from "../../types";
 
 export function DeleteProjectDialog({
   project,

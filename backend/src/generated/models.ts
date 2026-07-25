@@ -9,8 +9,10 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/User'
+export type * from './models/OAuthAccount'
 export type * from './models/RefreshToken'
 export type * from './models/Project'
+export type * from './models/StarterTemplateSchema'
 export type * from './models/Schema'
 export type * from './models/SchemaVersion'
 export type * from './commonInputTypes'

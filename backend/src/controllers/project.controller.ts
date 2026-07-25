@@ -18,6 +18,12 @@ export const projectController = {
     res.status(201).json({ project });
   }),
 
+  // create project with starter template 
+  createWithStarterTemplate: asyncHandler(async (req: Request, res: Response) => {
+    const project = await projectService.createWithStarterTemplate(req.user!.id, req.body);
+    res.status(201).json({ project });
+  }),
+
   update: asyncHandler(async (req: Request, res: Response) => {
     const project = await projectService.update(req.params.id, req.user!.id, req.body);
     res.status(200).json({ project });

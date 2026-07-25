@@ -52,8 +52,10 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
+  OAuthAccount: 'OAuthAccount',
   RefreshToken: 'RefreshToken',
   Project: 'Project',
+  StarterTemplateSchema: 'StarterTemplateSchema',
   Schema: 'Schema',
   SchemaVersion: 'SchemaVersion'
 } as const
@@ -79,11 +81,27 @@ export const UserScalarFieldEnum = {
   email: 'email',
   name: 'name',
   passwordHash: 'passwordHash',
+  avatarUrl: 'avatarUrl',
+  emailVerifiedAt: 'emailVerifiedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const OAuthAccountScalarFieldEnum = {
+  id: 'id',
+  provider: 'provider',
+  providerAccountId: 'providerAccountId',
+  accessToken: 'accessToken',
+  refreshToken: 'refreshToken',
+  expiresAt: 'expiresAt',
+  userId: 'userId',
+  createdAt: 'createdAt'
+} as const
+
+export type OAuthAccountScalarFieldEnum = (typeof OAuthAccountScalarFieldEnum)[keyof typeof OAuthAccountScalarFieldEnum]
 
 
 export const RefreshTokenScalarFieldEnum = {
@@ -108,6 +126,16 @@ export const ProjectScalarFieldEnum = {
 } as const
 
 export type ProjectScalarFieldEnum = (typeof ProjectScalarFieldEnum)[keyof typeof ProjectScalarFieldEnum]
+
+
+export const StarterTemplateSchemaScalarFieldEnum = {
+  id: 'id',
+  dbml: 'dbml',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type StarterTemplateSchemaScalarFieldEnum = (typeof StarterTemplateSchemaScalarFieldEnum)[keyof typeof StarterTemplateSchemaScalarFieldEnum]
 
 
 export const SchemaScalarFieldEnum = {

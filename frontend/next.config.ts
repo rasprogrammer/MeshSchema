@@ -5,6 +5,18 @@ const nextConfig: NextConfig = {
   // Next.js 16 uses Turbopack by default. @dbml/core bundles cleanly under
   // it without extra polyfill config, so we keep this minimal on purpose.
   turbopack: {},
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+      {
+        protocol: "http",
+        hostname: "**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

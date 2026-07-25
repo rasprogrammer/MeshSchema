@@ -13,8 +13,8 @@ import {
 } from "@/shared/ui/dropdown-menu";
 import { formatDate } from "@/lib/utils";
 import { Project } from "../types";
-import { RenameProjectDialog } from "./RenameProjectDialog";
-import { DeleteProjectDialog } from "./DeleteProjectDialog";
+import { RenameProjectDialog } from "./dialogs/RenameProjectDialog";
+import { DeleteProjectDialog } from "./dialogs/DeleteProjectDialog";
 
 export function ProjectCard({ project }: { project: Project }) {
   const [renameOpen, setRenameOpen] = useState(false);

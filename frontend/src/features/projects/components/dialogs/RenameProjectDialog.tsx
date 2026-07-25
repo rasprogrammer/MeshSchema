@@ -12,8 +12,8 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/shared/ui/dialog";
-import { useUpdateProject } from "../hooks/useProjects";
-import { Project } from "../types";
+import { useUpdateProject } from "../../hooks/useProjects";
+import { Project } from "../../types";
 
 export function RenameProjectDialog({
   project,

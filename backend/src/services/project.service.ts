@@ -1,6 +1,6 @@
 import { projectRepository } from "../repositories/project.repository";
 import { ForbiddenError, NotFoundError } from "../utils/AppError";
-import { CreateProjectInput, UpdateProjectInput } from "../validators/project.validator";
+import { CreateProjectInput, createWithStarterTemplateInput, UpdateProjectInput } from "../validators/project.validator";
 
 async function getOwnedProjectOrThrow(projectId: string, userId: string) {
   const project = await projectRepository.findById(projectId);
@@ -20,6 +20,10 @@ export const projectService = {
 
   create(ownerId: string, input: CreateProjectInput) {
     return projectRepository.create({ ...input, ownerId });
+  },
+
+  createWithStarterTemplate(ownerId: string, input: createWithStarterTemplateInput) {
+    return projectRepository.createWithStarterTemplate({ ...input, ownerId });
   },
 
   async update(projectId: string, userId: string, input: UpdateProjectInput) {
