@@ -83,7 +83,7 @@ Full spec in [`docs/requirements-master.md`](./docs/requirements-master.md) (MVP
 
 | # | Decision |
 |---|---|
-| D-01 | Realtime transport: **raw `ws`**, not Socket.io — room manager modeled on `narsixyz/cosketch` |
+| D-01 | Realtime transport: **raw `ws`**, not Socket.io — room-per-project manager with a JWT-authenticated handshake |
 | D-02 | WebSocket auth: **same httpOnly `access_token` cookie** as the REST API (handshake is a plain HTTP request, so the browser attaches it automatically) — no token in the connection URL |
 | D-03 | Prisma client: **shared `@repo/database` package**, one schema for `apps/api` and `apps/ws` instead of two copies |
 | D-04 | Module system: **CommonJS** across `apps/api`, `apps/ws`, and both shared packages, to avoid ESM/CJS interop issues in a mixed monorepo |
