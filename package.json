@@ -1,0 +1,33 @@
+{
+  "name": "schema-designer",
+  "private": true,
+  "packageManager": "npm@10.9.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "lint": "turbo run lint",
+    "check-types": "turbo run check-types",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e --filter=@repo/web",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "db:up": "docker compose -f docker-compose.yml up -d postgres",
+    "db:down": "docker compose -f docker-compose.yml down",
+    "db:deploy": "turbo run db:deploy --filter=@repo/database",
+    "db:migrate": "turbo run db:migrate --filter=@repo/database",
+    "generate": "turbo run generate --filter=@repo/database"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "*",
+    "prettier": "^3.7.4",
+    "turbo": "^2.7.1",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./../src/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  name          String
+  passwordHash  String?         @map("password_hash")
+  avatarUrl        String?
+  emailVerifiedAt  DateTime?
+  twoFactorSecret     String?  @map("two_factor_secret")
+  twoFactorEnabled    Boolean  @default(false) @map("two_factor_enabled")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  projects      Project[]
+  refreshTokens RefreshToken[]
+  oauthAccounts OAuthAccount[]  
+
+  @@map("users")
+}
+
+model OAuthAccount {
+  id                String   @id @default(uuid())
+
+  provider          String
+  providerAccountId String
+
+  accessToken       String?
+  refreshToken      String?
+  expiresAt         DateTime?
+
+  userId            String
+  user              User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt         DateTime @default(now())
+
+  @@unique([provider, providerAccountId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  revoked   Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  ownerId     String   @map("owner_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  schema      Schema?
+
+  @@index([ownerId])
+  @@map("projects")
+}
+
+model StarterTemplateSchema {
+  id              String          @id  @default(uuid())
+  name            String
+  description     String?
+  image           String?
+  dbml            String          @default("")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+}
+
+/// One active DBML schema document per project (1:1). Historical states
+/// are kept in SchemaVersion for undo/redo and audit-free history.
+model Schema {
+  id        String          @id @default(uuid())
+  projectId String          @unique @map("project_id")
+  dbml      String          @default("")
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+  versions  SchemaVersion[]
+  project   Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("schemas")
+}
+
+model SchemaVersion {
+  id        String   @id @default(uuid())
+  schemaId  String   @map("schema_id")
+  dbml      String
+  label     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  schema    Schema   @relation(fields: [schemaId], references: [id], onDelete: Cascade)
+
+  @@index([schemaId, createdAt])
+  @@map("schema_versions")
+}
