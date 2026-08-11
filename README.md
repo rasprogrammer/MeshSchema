@@ -1,166 +1,119 @@
 # Schema Designer — AI-powered Database Schema Designer
 
-A full-stack tool for designing database schemas in DBML, visualizing them as
-an ER diagram, and exporting to SQL/DBML/PNG/SVG — with an AI assistant that
-can generate, improve, explain, and review your schema, and live multiplayer
-collaboration over a WebSocket connection.
+A self-hosted, full-stack tool for designing database schemas in DBML, visualizing them as an ER diagram, and exporting to SQL/DBML/PNG/SVG — with an AI assistant and live multiplayer collaboration.
 
-Built from scratch (not a fork) as a clean-room project, structured as a
-Turborepo monorepo. The real-time layer follows the room/presence pattern
-used by [narsixyz/cosketch](https://github.com/narsixyz/cosketch) — a raw
-`ws` WebSocket server instead of Socket.io.
+- **API**: Node.js 20 + Express + TypeScript + Prisma 7 + PostgreSQL 16
+- **Realtime**: raw `ws` WebSocket server (no Socket.io) — presence, live cursors, DBML edit broadcast
+- **Web**: Next.js 16 (App Router) + TypeScript + Tailwind CSS + shadcn/ui + TanStack Query + Zustand + Monaco Editor + XYFlow
+- **AI**: Anthropic API (Claude), streaming (SSE) generation with diff-preview
+- **Shared**: `@repo/database` (Prisma client) + `@repo/types` (WebSocket protocol + domain types)
+- **Monorepo**: npm workspaces + Turborepo
 
-## Stack
+## Quick start
 
-- **Frontend** (`apps/web`): Next.js 16 (App Router) · TypeScript · Tailwind
-  CSS · **shadcn/ui** (Radix primitives + `class-variance-authority`, no
-  other component library) · React Query · Zustand · Monaco Editor ·
-  XYFlow · dagre · native `WebSocket`
-- **API** (`apps/api`): Node.js · Express · TypeScript · Prisma · PostgreSQL
-  · JWT auth (httpOnly cookies) · Passport (Google/GitHub OAuth) · TOTP 2FA
-  (otplib) · pino
-- **Realtime** (`apps/ws`): plain `ws` WebSocket server — presence, live
-  cursors, and DBML edit broadcast per project room, authenticated off the
-  same httpOnly access-token cookie the REST API uses
-- **Shared packages**: `@repo/database` (single Prisma schema/client used by
-  both `apps/api` and `apps/ws`), `@repo/types` (WebSocket wire-protocol +
-  domain types, so the two backend apps and the frontend can't drift apart
-  on message shape)
-- **AI**: Anthropic API (Claude), including streaming (SSE) generation with
-  a diff-preview before changes are applied
-- **CI/CD**: GitHub Actions — lint, typecheck, Vitest unit tests, Playwright
-  e2e, build
-
-## Project layout
-
-```
-apps/
-  web/        Next.js frontend — src/features/{auth,projects,editor,diagram,ai,collab,export}
-  api/        Express REST API — controllers → services → repositories → @repo/database
-  ws/         WebSocket server — connection auth, room manager, presence/cursor/schema-edit handlers
-packages/
-  database/   Prisma schema + shared client, consumed by apps/api and apps/ws
-  types/      Shared WebSocket protocol + domain types
-  typescript-config/   Shared tsconfig bases
-  eslint-config/        Shared flat ESLint config
-docs/
-  requirements-master.md   Full MVP → Tier 1 → Tier 2 requirements spec
-turbo.json    Task graph (build/dev/test/lint, dependency-ordered)
-docker-compose.yml   Postgres + api + ws + web containers
-```
-
-## Prerequisites
-
+### Prerequisites
 - Node.js 20+
-- Docker (for Postgres), or a local PostgreSQL 14+ instance
-- An Anthropic API key (for the AI features — everything else works without one)
+- Docker Desktop (for Postgres)
+- An Anthropic API key (for AI features — everything else works without one)
 
-## Quickstart (local dev, all apps via Turborepo)
-
+### 1. Install
 ```bash
-npm install                 # installs every workspace at once
+npm install
+```
 
-# copy env files
+### 2. Configure env
+```bash
 cp apps/api/.env.example apps/api/.env
 cp apps/ws/.env.example apps/ws/.env
 cp apps/web/.env.local.example apps/web/.env.local
-# edit apps/api/.env: set JWT secrets and ANTHROPIC_API_KEY
-# apps/ws/.env's JWT_ACCESS_SECRET must match apps/api's JWT_ACCESS_SECRET exactly
+```
+Set `JWT_ACCESS_SECRET`/`JWT_REFRESH_SECRET` and `ANTHROPIC_API_KEY` in `apps/api/.env`. `apps/ws/.env`'s `JWT_ACCESS_SECRET` must match `apps/api/.env` exactly — both verify the same access token. To enable Google/GitHub OAuth, set the corresponding client id/secret (a provider is skipped if its client id is blank).
 
-npm run db:up                              # starts Postgres in Docker
+### 3. Start infrastructure (Postgres)
+```bash
+npm run db:up
+```
+- Postgres → `localhost:5432`
+
+### 4. Run migrations + generate the Prisma client
+```bash
 npx prisma migrate dev --schema=packages/database/prisma/schema.prisma --name init
-npm run generate                           # generates the Prisma client into packages/database
-
-npm run dev                                # runs web (:3000), api (:4000), ws (:4001) together
+npm run generate
 ```
 
-Open http://localhost:3000, register an account, create a project, and start
-designing. The DBML you type on the left renders live as an ER diagram on the
-right; open the same project in a second tab to see live cursors and edit
-broadcast over the WebSocket connection.
-
-### Running a single app
-
-Turborepo's `--filter` scopes any script to one workspace and its dependencies:
-
+### 5. Start the apps (in parallel)
 ```bash
-npx turbo run dev --filter=@repo/api
-npx turbo run dev --filter=@repo/ws
-npx turbo run dev --filter=@repo/web
+npm run dev
+```
+- Web → http://localhost:3000
+- API → http://localhost:4000/api/v1
+- WebSocket → ws://localhost:4001
+
+### Demo credentials
+None included — there's no seed script yet. Register an account at http://localhost:3000/register to get started.
+
+## Common scripts
+
+| Script | Description |
+|---|---|
+| `npm run dev` | Run web + api + ws in parallel (Turborepo) |
+| `npm run build` | Build all apps and packages, dependency-ordered |
+| `npm run test` | Unit tests across every workspace |
+| `npm run test:e2e` | Playwright e2e (requires api + ws + web running) |
+| `npm run lint` / `npm run check-types` | Lint / typecheck every workspace |
+| `npm run db:up` / `npm run db:down` | Start/stop the Postgres container |
+| `npm run db:migrate` | Apply Prisma migrations (dev) |
+| `npm run db:deploy` | Apply Prisma migrations (deploy, non-interactive) |
+| `npm run generate` | Regenerate the Prisma client into `packages/database` |
+
+## Implemented requirement coverage
+
+Full spec in [`docs/requirements-master.md`](./docs/requirements-master.md) (MVP → Tier 1 → Tier 2, status-tagged). MVP is fully wired:
+
+- **Auth**: Email/password, Google + GitHub OAuth, JWT (15m access / 7d refresh, rotating, revocable), TOTP 2FA with a single-purpose `aud: "2fa-pending"` token rejected by both the REST API and the WebSocket server, httpOnly/sameSite session cookies.
+- **Projects**: Create/rename/delete, starter templates.
+- **Schema Editor**: Monaco with custom DBML language definition, autosave, undo/redo across AI edits, linear version snapshots.
+- **ER Diagram**: Client-side DBML parsing (`@dbml/core`) for instant live preview, XYFlow canvas with dagre auto-layout.
+- **Export**: SQL, DBML, PNG, SVG.
+- **AI**: Generate/improve via the Anthropic API, SSE streaming, accept/reject diff-preview before anything is applied — never an instant write.
+- **Collaboration**: Presence + live cursors + DBML edit broadcast over `apps/ws`, a raw WebSocket server with room-per-project, authenticated off the same httpOnly cookie as the REST API, heartbeat-based dead-connection reaping, graceful shutdown.
+- **Quality/DevOps**: Turborepo monorepo, Vitest unit tests, Playwright e2e, GitHub Actions CI (lint → typecheck → test → build → e2e) with a Postgres service container.
+
+## Key decisions
+
+| # | Decision |
+|---|---|
+| D-01 | Realtime transport: **raw `ws`**, not Socket.io — room manager modeled on `narsixyz/cosketch` |
+| D-02 | WebSocket auth: **same httpOnly `access_token` cookie** as the REST API (handshake is a plain HTTP request, so the browser attaches it automatically) — no token in the connection URL |
+| D-03 | Prisma client: **shared `@repo/database` package**, one schema for `apps/api` and `apps/ws` instead of two copies |
+| D-04 | Module system: **CommonJS** across `apps/api`, `apps/ws`, and both shared packages, to avoid ESM/CJS interop issues in a mixed monorepo |
+| D-05 | Component library: **shadcn/ui only** — Radix primitives + `class-variance-authority`, no MUI/Ant/Chakra |
+| D-06 | Document sync: **last-write-wins** on DBML broadcast for v1; CRDT/OT is tracked as a Tier 2 item, not built yet |
+| D-07 | Schema version history: **linear snapshots**, no branching/merge UI yet (also Tier 2) |
+
+## Architecture
+
+```
+schema-designer/
+├── apps/
+│   ├── web/          # Next.js frontend (port 3000)
+│   ├── api/           # Express REST API (port 4000)
+│   └── ws/             # WebSocket server (port 4001)
+├── packages/
+│   ├── database/      # Prisma schema + shared client
+│   ├── types/           # Shared WebSocket protocol + domain types
+│   ├── typescript-config/
+│   └── eslint-config/
+├── docs/
+│   └── requirements-master.md
+└── docker-compose.yml
 ```
 
-## Testing
-
-```bash
-npm run test              # runs every workspace's test script via turbo
-npm run test:e2e          # Playwright e2e (requires api + ws + web running)
-```
-
-CI (`.github/workflows/ci.yml`) runs lint + typecheck + unit tests, a
-Postgres-backed migration check, a production build, and the Playwright
-suite on every push/PR to `main`.
-
-## Running everything with Docker
-
-```bash
-docker compose up --build
-```
-
-Brings up Postgres, the API (`apps/api`, runs migrations on boot), the
-WebSocket server (`apps/ws`), and the web app (`apps/web`, Next.js
-standalone build) — four containers, one command.
-
-## Notable design decisions
-
-- **DBML is the source of truth.** Each project has exactly one `Schema` row
-  holding the current DBML text; `SchemaVersion` rows are snapshots created
-  on manual saves and AI edits.
-- **The ER diagram is parsed entirely client-side** using `@dbml/core`, so
-  the "live preview" is instant — no round-trip to the server as you type.
-- **Undo/redo works across AI edits.** AI-generated DBML is applied to the
-  Monaco model as a single edit operation (`executeEdits` + `pushUndoStop`),
-  so `Ctrl+Z` reverts an AI rewrite just like any manual edit.
-- **Auth** uses short-lived access tokens (15m) + rotating refresh tokens
-  (7d, stored server-side so they can be revoked), delivered as **httpOnly,
-  sameSite cookies** — never exposed to JS. The frontend refreshes silently
-  via an axios response interceptor on 401.
-- **Two-factor authentication (TOTP)** is opt-in per account. When enabled,
-  `/auth/login` returns a short-lived, single-purpose token signed with an
-  `aud: "2fa-pending"` claim that both `requireAuth` (REST) and
-  `authenticateConnection` (WebSocket) explicitly reject, so it can never be
-  replayed as a real session on either transport even if it leaks.
-- **OAuth (Google / GitHub)** via Passport, `session: false` — provider
-  tokens never reach the browser.
-- **Live collaboration runs over a raw WebSocket connection** (`apps/ws`),
-  not Socket.io: each project is a room; members broadcast cursor position
-  and DBML edits, and everyone else's cursor + diagram update in near real
-  time. Auth reuses the same httpOnly `access_token` cookie as the REST
-  API — the WebSocket handshake is a plain HTTP request, so the browser
-  attaches it automatically, with a `?token=` query param fallback for
-  non-browser tooling. Last-write-wins on the shared document for now; a
-  CRDT/OT layer is tracked as a Tier 2 item in `docs/requirements-master.md`.
-- **AI streaming + diff preview**: `/ai/generate/stream` and
-  `/ai/improve/stream` return Server-Sent Events, so the frontend renders
-  the DBML as it's generated instead of a blocking spinner. Once the stream
-  finishes and the backend has validated the result, the UI shows a
-  line-level diff (current vs. proposed) and only applies it on explicit
-  Accept.
-- **shadcn/ui only.** Every component in `apps/web/src/shared/ui` is a real
-  shadcn/ui component (Radix primitive + `cva` + `tailwind-merge`'s `cn()`
-  helper) — no MUI, Ant Design, Chakra, or similar. `apps/web/components.json`
-  wires up the shadcn CLI so `npx shadcn add <component>` drops new
-  components straight into the existing structure.
-
-## Requirements spec
-
-See [`docs/requirements-master.md`](./docs/requirements-master.md) for the
-full MVP → Tier 1 (near-term roadmap) → Tier 2 (architecturally hard)
-requirements, organized by feature domain with status tags on every item.
-
-## Explicitly out of scope (per MVP spec)
-
-Billing, subscriptions, organizations, RBAC, notifications, audit logs,
-transactional email, Redis, background queues, feature flags, and
-microservices are all intentionally left out of the MVP — see
-`docs/requirements-master.md` for which of these are tracked as future
-(Tier 1/Tier 2) work rather than permanently excluded.
+## Security highlights
+- Passwords hashed with **bcrypt cost 10**.
+- JWT access tokens are short-lived (15m); refresh tokens rotate on each use and are stored server-side so they're revocable.
+- Refresh tokens delivered as **httpOnly, sameSite cookies** — never exposed to JS.
+- TOTP 2FA: the post-login `2fa-pending` token is rejected as an access token by both `requireAuth` (REST) and `authenticateConnection` (WebSocket) even if it leaks.
+- OAuth via Passport with `session: false` — provider tokens never reach the browser.
+- `helmet`, CORS limited via `CORS_ORIGIN`, auth-endpoint rate limiting (20 req / 15 min).
+- WebSocket connections are origin-checked against `CORS_ORIGIN` as a defense-in-depth layer on top of the per-connection JWT check.
