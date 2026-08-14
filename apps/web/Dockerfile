@@ -25,7 +25,8 @@ FROM base AS runtime
 ENV NODE_ENV=production
 COPY --from=build /repo/apps/web/.next/standalone ./
 COPY --from=build /repo/apps/web/.next/static ./apps/web/.next/static
-COPY --from=build /repo/apps/web/public ./apps/web/public
+# Copy public folder if it exists
+RUN if [ -d /repo/apps/web/public ]; then mkdir -p ./apps/web/public && cp -r /repo/apps/web/public/* ./apps/web/public/; fi
 
 WORKDIR /repo/apps/web
 EXPOSE 3000
