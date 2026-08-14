@@ -23,10 +23,12 @@ COPY --from=deps /repo/node_modules ./node_modules
 COPY --from=build /repo/packages/database/dist ./packages/database/dist
 COPY --from=build /repo/packages/database/package.json ./packages/database/package.json
 COPY --from=build /repo/packages/database/prisma ./packages/database/prisma
+COPY --from=build /repo/packages/database/prisma.config.ts ./packages/database/prisma.config.ts
 COPY --from=build /repo/packages/types/dist ./packages/types/dist
 COPY --from=build /repo/packages/types/package.json ./packages/types/package.json
 COPY --from=build /repo/apps/api/dist ./apps/api/dist
 COPY --from=build /repo/apps/api/package.json ./apps/api/package.json
+COPY --from=build /repo/apps/api/tsconfig.json ./apps/api/tsconfig.json
 COPY --from=build /repo/apps/api/docker-entrypoint.sh ./apps/api/docker-entrypoint.sh
 RUN chmod +x /repo/apps/api/docker-entrypoint.sh
 
