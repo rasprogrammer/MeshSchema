@@ -18,6 +18,7 @@ packages/database/src/generated/
 
 # Env files
 .env
+.env.production
 .env.local
 .env.*.local
 !.env.example

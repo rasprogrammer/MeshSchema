@@ -1,5 +1,5 @@
 # Build context is the MONOREPO ROOT: docker build -f apps/api/Dockerfile .
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 WORKDIR /repo
 
 FROM base AS deps
@@ -29,9 +29,8 @@ COPY --from=build /repo/packages/types/package.json ./packages/types/package.jso
 COPY --from=build /repo/apps/api/dist ./apps/api/dist
 COPY --from=build /repo/apps/api/package.json ./apps/api/package.json
 COPY --from=build /repo/apps/api/tsconfig.json ./apps/api/tsconfig.json
-COPY --from=build /repo/apps/api/docker-entrypoint.sh ./apps/api/docker-entrypoint.sh
-RUN chmod +x /repo/apps/api/docker-entrypoint.sh
 
 WORKDIR /repo/apps/api
+ENV TS_NODE_BASEURL=./dist
 EXPOSE 4000
-CMD ["./docker-entrypoint.sh"]
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=../../packages/database/prisma/schema.prisma --config=../../packages/database/prisma.config.ts && node --require tsconfig-paths/register dist/server.js"]
