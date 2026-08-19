@@ -1,5 +1,5 @@
 # Build context is the MONOREPO ROOT: docker build -f apps/ws/Dockerfile .
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 WORKDIR /repo
 
 FROM base AS deps
@@ -11,7 +11,7 @@ COPY packages/database/package.json packages/database/package.json
 COPY packages/types/package.json packages/types/package.json
 COPY packages/typescript-config/package.json packages/typescript-config/package.json
 COPY packages/eslint-config/package.json packages/eslint-config/package.json
-RUN npm install
+RUN npm ci
 
 FROM deps AS build
 COPY . .
