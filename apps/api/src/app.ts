@@ -20,7 +20,7 @@ export function createApp(): Application {
   );
   app.use(express.json({ limit: "1mb" }));
   app.use(cookieParser());
-  app.use(passport.initialize());
+  app.use(passport.initialize() as unknown as express.RequestHandler);
   app.use(httpLogger);
 
   app.use(env.apiPrefix, routes);

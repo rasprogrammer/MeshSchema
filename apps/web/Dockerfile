@@ -1,33 +1,45 @@
-# Build context is the MONOREPO ROOT: docker build -f apps/web/Dockerfile .
-FROM node:22-alpine AS base
+# Base
+FROM oven/bun:1-debian AS base
+
 WORKDIR /repo
 
+# Dependencies 
 FROM base AS deps
-COPY package.json package-lock.json* turbo.json ./
+
+COPY package.json bun.lock turbo.json ./
+
 COPY apps/api/package.json apps/api/package.json
-COPY apps/ws/package.json apps/ws/package.json
 COPY apps/web/package.json apps/web/package.json
+COPY apps/ws/package.json apps/ws/package.json
+
 COPY packages/database/package.json packages/database/package.json
 COPY packages/types/package.json packages/types/package.json
-COPY packages/typescript-config/package.json packages/typescript-config/package.json
-COPY packages/eslint-config/package.json packages/eslint-config/package.json
-RUN npm ci
+COPY packages/typescript-config/package.json packages/typescript-config/package.json    
 
-FROM deps AS build
+RUN bun install --frozen-lockfile
+
+
+# Builder 
+FROM base AS builder
+
+COPY --from=deps /repo ./
 COPY . .
-ARG NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
-ARG NEXT_PUBLIC_WS_URL=ws://localhost:4001
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
-RUN npx turbo run build --filter=@repo/web...
 
-FROM base AS runtime
-ENV NODE_ENV=production
-COPY --from=build /repo/apps/web/.next/standalone ./
-COPY --from=build /repo/apps/web/.next/static ./apps/web/.next/static
-# Copy public folder if it exists
-RUN if [ -d /repo/apps/web/public ]; then mkdir -p ./apps/web/public && cp -r /repo/apps/web/public/* ./apps/web/public/; fi
+RUN bun turbo run build --filter=@repo/web 
 
-WORKDIR /repo/apps/web
+
+# Production 
+FROM oven/bun:1-debian AS runner
+
+WORKDIR /app
+
+COPY --from=builder /repo/apps/web/.next/standalone ./
+COPY --from=builder /repo/apps/web/.next/static ./.next/static
+COPY --from=builder /repo/apps/web/public ./public
+
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 EXPOSE 3000
-CMD ["node", "server.js"]
+
+CMD ["bun", "run", "apps/web/server.js"]

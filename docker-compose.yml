@@ -18,44 +18,22 @@ services:
       timeout: 5s
       retries: 10
 
-  api:
-    build:
+  api: 
+    build: 
       context: .
       dockerfile: apps/api/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL}
+    env_file:
+      - .env
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      PORT: 4000
-      NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-access-secret}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-secret}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
-      FRONTEND_URL: ${CORS_ORIGIN:-http://localhost:3000}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-6}
     ports:
       - "127.0.0.1:4000:4000"
-
-  ws:
-    build:
-      context: .
-      dockerfile: apps/ws/Dockerfile
-    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
-    environment:
-      WS_PORT: 4001
-      NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-access-secret}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
-    ports:
-      - "127.0.0.1:4001:4001"
-
+  
   web:
     build:
       context: .
@@ -64,9 +42,6 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000/api/v1}
         NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost:4001}
     restart: unless-stopped
-    depends_on:
-      - api
-      - ws
     ports:
       - "127.0.0.1:3000:3000"
 

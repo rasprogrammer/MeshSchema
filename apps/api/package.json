@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js",
+    "start:api": "bun run src/server.ts",
     "lint": "eslint src --ext .ts",
     "check-types": "tsc --noEmit",
     "test": "vitest run",
@@ -38,7 +38,6 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@repo/eslint-config": "*",
     "@repo/typescript-config": "*",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie": "^0.6.0",
@@ -53,7 +52,6 @@
     "@types/qrcode": "^1.5.5",
     "@types/supertest": "^6.0.2",
     "@vitest/coverage-v8": "^2.1.4",
-    "eslint": "^8.57.1",
     "pino-pretty": "^13.0.0",
     "supertest": "^7.0.0",
     "tsx": "^4.19.1",

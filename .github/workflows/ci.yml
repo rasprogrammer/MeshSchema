@@ -40,28 +40,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
+          bun-version: latest
 
       - name: Install dependencies (all workspaces)
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Generate Prisma client & run migrations
         working-directory: packages/database
         run: |
-          npx prisma generate
-          npx prisma migrate deploy
+          bunx prisma generate
+          bunx prisma migrate deploy
 
       - name: Lint
-        run: npx turbo run lint
+        run: bunx turbo run lint
 
       - name: Typecheck
-        run: npx turbo run check-types
+        run: bunx turbo run check-types
 
       - name: Unit tests with coverage
-        run: npx turbo run test -- --coverage
+        run: bunx turbo run test -- --coverage
 
       - name: Upload API coverage
         uses: actions/upload-artifact@v4
@@ -94,16 +93,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
+          bun-version: latest
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: "Build (turbo, dependency-ordered: packages before apps)"
-        run: npx turbo run build
+        run: bunx turbo run build
 
       - name: Upload web build output
         uses: actions/upload-artifact@v4
@@ -138,41 +136,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          bun-version: latest
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Migrate database
         working-directory: packages/database
         run: |
-          npx prisma generate
-          npx prisma migrate deploy
+          bunx prisma generate
+          bunx prisma migrate deploy
 
       - name: Build packages + api + ws
-        run: npx turbo run build --filter=@repo/api --filter=@repo/ws
+        run: bunx turbo run build --filter=@repo/api --filter=@repo/ws
 
       - name: Start API
         working-directory: apps/api
-        run: node dist/server.js &
+        run: bun run dist/server.js &
 
       - name: Start WebSocket server
         working-directory: apps/ws
-        run: node dist/server.js &
+        run: bun run dist/server.js &
 
-      - name: Build web (production build, needed for Playwright's `npm run start`)
+      - name: Build web (production build, needed for Playwright's `bun run start`)
         working-directory: apps/web
-        run: npm run build
+        run: bun run build
 
       - name: Install Playwright browsers
         working-directory: apps/web
-        run: npx playwright install --with-deps chromium
+        run: bunx playwright install --with-deps chromium
 
       - name: Run Playwright tests
         working-directory: apps/web
-        run: npm run test:e2e
+        run: bun run test:e2e
 
       - name: Upload Playwright report
         if: always()
