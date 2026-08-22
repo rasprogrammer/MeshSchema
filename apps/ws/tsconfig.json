@@ -1,12 +1,7 @@
 {
-  "extends": "@repo/typescript-config/base.json",
+  "extends": "@repo/typescript-config/node-library.json",
   "compilerOptions": {
-    "module": "CommonJS",
-    "moduleResolution": "Node",
-    "lib": ["ES2022"],
-    "types": ["node"],
     "outDir": "dist",
     "rootDir": "src"
-  },
-  "include": ["src"]
+  }
 }

@@ -1,5 +1,11 @@
+import path from "path";
+import dotenv from "dotenv";
 import { PrismaClient } from "./generated/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+
+// Load the database package's own .env so consumers (apps/api, apps/ws)
+// don't need to duplicate DATABASE_URL in their env files.
+dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
 
 /**
  * Single shared Prisma client for every app in the monorepo (apps/api,

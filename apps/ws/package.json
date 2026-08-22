@@ -1,31 +1,19 @@
 {
-  "name": "@repo/ws",
-  "version": "1.0.0",
+  "name": "ws",
+  "main": "src/server.ts",
+  "type": "module",
   "private": true,
-  "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js",
-    "check-types": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@repo/database": "*",
-    "@repo/types": "*",
-    "cookie": "^0.7.1",
-    "dotenv": "^16.4.5",
-    "jsonwebtoken": "^9.0.2",
-    "pino": "^9.5.0",
-    "ws": "^8.18.1"
+    "dev": "bun --watch run src/server.ts"
   },
   "devDependencies": {
-    "@repo/typescript-config": "*",
-    "@types/cookie": "^0.6.0",
-    "@types/jsonwebtoken": "^9.0.7",
-    "@types/node": "^22.10.1",
-    "@types/ws": "^8.5.13",
-    "pino-pretty": "^13.0.0",
-    "tsx": "^4.19.2",
-    "typescript": "^5.9.3"
+    "@types/bun": "latest",
+    "@types/ws": "^8.18.1"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  },
+  "dependencies": {
+    "ws": "^8.21.3"
   }
 }
