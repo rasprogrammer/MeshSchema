@@ -15,9 +15,10 @@ import { SaveStatusIndicator } from "@/features/editor/components/SaveStatusIndi
 import { DiagramCanvas, DiagramCanvasHandle } from "@/features/diagram/components/DiagramCanvas";
 import { AiPanel } from "@/features/ai/components/AiPanel";
 import { ExportMenu } from "@/features/export/components/ExportMenu";
-import { useCollabSession } from "@/features/collab/hooks/useCollabSession";
-import { LiveCursors } from "@/features/collab/components/LiveCursors";
-import { PresenceStack } from "@/features/collab/components/PresenceStack";
+import { useCollabSession } from "@/features/collab-2/hooks/useCollabSession";
+import { LiveCursors } from "@/features/collab-2/components/LiveCursors";
+import { PresenceStack } from "@/features/collab-2/components/PresenceStack";
+import { Share } from "@/features/collab/components/Share";
 
 export default function ProjectWorkspacePage({ params }: { params: Promise<{ id: string }> }) {
   const { id: projectId } = use(params);
@@ -111,6 +112,8 @@ export default function ProjectWorkspacePage({ params }: { params: Promise<{ id:
             <Button variant="ai" size="sm" onClick={() => setAiOpen((v) => !v)}>
               <Sparkles className="h-4 w-4" /> AI Assistant
             </Button>
+
+            <Share />
           </div>
         </header>
 
