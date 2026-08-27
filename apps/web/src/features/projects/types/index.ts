@@ -10,6 +10,8 @@ export interface Project {
 export interface CreateProjectPayload {
   name: string;
   description?: string;
+  isPrivate: boolean;
+  password?: string;
 }
 
 export interface UpdateProjectPayload {

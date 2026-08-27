@@ -19,12 +19,11 @@ model User {
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
 
-  projects      Project[]
-  refreshTokens RefreshToken[]
-  oauthAccounts OAuthAccount[]  
-  rooms         Room[]
-  roomMembers   RoomMember[]
-  roomMessages  RoomMessage[]
+  projects        Project[]
+  refreshTokens   RefreshToken[]
+  oauthAccounts   OAuthAccount[]  
+  projectMembers  ProjectMember[]
+  projectMessages ProjectMessage[]
 
   @@map("users")
 }
@@ -65,12 +64,15 @@ model Project {
   name        String
   description String?
   ownerId     String   @map("owner_id")
+  isPrivate   Boolean  @default(false) @map("is_private")
+  password    String?  @map("password")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
   owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   schema      Schema?
 
-  rooms        Room[]
+  projectMembers  ProjectMember[]
+  projectMessages ProjectMessage[]
 
   @@index([ownerId])
   @@map("projects")
@@ -112,59 +114,39 @@ model SchemaVersion {
   @@map("schema_versions")
 }
 
-model Room {
-  id        String   @id @default(uuid())
-  name      String   
-  slug      String
-  isPrivate Boolean   @default(false)
-  password  String?   
 
-  projectId String    @map("project_id")
-  ownerId   String    @map("owner_id")
-
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-
-  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  owner     User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)    
-  roomMembers   RoomMember[]  
-  roomMessages  RoomMessage[]
-
-  @@map("rooms")  
-}
-
-model RoomMember {
+model ProjectMember {
   id        String  @id  @default(uuid())
-  roomId    String
+  projectId String
   userId    String
-  role      RoomRole    @default(MEMBER)  // OWNER, ADMIN, MEMBER
+  role      ProjectRole    @default(MEMBER)  // OWNER, ADMIN, MEMBER
   joinedAt  DateTime    @default(now()) @map("joined_at")
 
-  room      Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("room_members") 
-  @@unique([roomId, userId])  
+  @@map("project_members") 
+  @@unique([projectId, userId])
 }
 
-model RoomMessage {
+model ProjectMessage {
   id        String   @id @default(uuid())
-  roomId    String
+  projectId    String
   userId    String
   content   String
   type      MessageType   @default(TEXT)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  room      Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   sender    User      @relation(fields: [userId], references: [id], onDelete: Cascade)  
 
-  @@map("room_messages")
-  @@index([roomId, createdAt])
+  @@map("project_messages")
+  @@index([projectId, createdAt])
 }
 
 
-enum RoomRole {
+enum ProjectRole {
   OWNER 
   ADMIN 
   MEMBER

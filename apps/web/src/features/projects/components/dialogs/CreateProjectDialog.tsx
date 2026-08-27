@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { Plus } from "lucide-react";
+import { Eye, EyeOff, Plus, SwitchCamera, ToggleLeft } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -17,22 +17,33 @@ import {
   DialogClose,
 } from "@/shared/ui/dialog";
 import { useCreateProject } from "../../hooks/useProjects";
+import { Switch } from "@/shared/ui/switch";
 
 export function CreateProjectDialog() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [checked, setChecked] = useState(false);
+  const [isViewPassword, setIsViewPassword] = useState(false);
+  const [password, setPassword] = useState("");
   const createProject = useCreateProject();
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     createProject.mutate(
-      { name, description: description || undefined },
+      {
+        name,
+        description: description || undefined,
+        isPrivate: checked,
+        password: checked ? password : undefined,
+      },
       {
         onSuccess: () => {
           setOpen(false);
           setName("");
           setDescription("");
+          setChecked(false);
+          setPassword("");
         },
       }
     );
@@ -65,6 +76,42 @@ export function CreateProjectDialog() {
               placeholder="What is this schema for?"
             />
           </div>
+          {/* add here private switch toggle if private show input for password, use shadcn for component switch toggle */}
+          <div className="space-y-2">
+            <Label htmlFor="project-private">Visibility</Label>
+            <div className="flex items-center space-x-2">
+              <Switch id="project-private" checked={checked} onCheckedChange={setChecked} />
+              <span>{checked ? "Private" : "Public"}</span>
+            </div>
+          </div>
+          {checked && (
+            <div className="space-y-2">
+              <Label htmlFor="project-password">Password</Label>
+              <div className="relative">
+              <Input
+                id="project-password"
+                type={isViewPassword ? "text" : "password"}
+                required={checked}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter a password"
+              />
+              {isViewPassword ? (
+                  <Eye
+                    className="absolute right-4 top-2 z-10 cursor-pointer text-gray-500"
+                    onClick={() => {
+                      setIsViewPassword(!isViewPassword), console.log(isViewPassword)
+                    }}
+                  />
+                ) : (
+                  <EyeOff
+                    className="absolute right-4 top-2 z-10 cursor-pointer text-gray-500"
+                    onClick={() => setIsViewPassword(!isViewPassword)}
+                  />
+                )}
+              </div>
+            </div>
+          )}
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline">Cancel</Button>
