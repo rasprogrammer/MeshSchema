@@ -1,27 +1,26 @@
+import { verifyAccessToken } from "@repo/backend-common";
+import { env } from "../config/env";
 
-import jwt from "jsonwebtoken";
-
-interface DecodedToken {
-    id: string;
+export interface AuthenticatedUser {
+  id: string;
+  email: string;
 }
 
-export const authenticateToken = (token: string): DecodedToken | null => {
-    try {
-        if (!token) {
-            console.log('No token provided');
-            return null;
-        }
+/**
+ * Verifies a WebSocket connection's access token using the same secret and
+ * payload shape as apps/api. Purely stateless — ws never signs, rotates, or
+ * checks refresh tokens; that stays exclusively apps/api's responsibility.
+ * A user who logged out keeps their existing access token valid until it
+ * naturally expires (mirrors apps/api's own requireAuth behavior).
+ */
+export function authenticateConnection(token: string | null): AuthenticatedUser | null {
+  if (!token) return null;
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as DecodedToken;
-        if (!decoded || !decoded.id) {
-            console.log('Invalid token');
-            return null;
-        }
-
-        return decoded;
-
-    } catch (error) {
-        console.log('Error verifying token', error);
-        return null;
-    }
-};
+  try {
+    const payload = verifyAccessToken(token, env.jwtAccessSecret);
+    if (!payload.sub || !payload.email) return null;
+    return { id: payload.sub, email: payload.email };
+  } catch {
+    return null;
+  }
+}

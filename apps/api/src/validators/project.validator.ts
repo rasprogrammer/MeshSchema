@@ -5,7 +5,9 @@ export const projectDescriptionSchema = z.string().max(500).optional();
 
 export const createProjectSchema = z.object({
   name: projectNameSchema,
-  description: projectDescriptionSchema
+  description: projectDescriptionSchema,
+  isPrivate: z.boolean().optional(),
+  password: z.string().optional(),
 });
 
 export const updateProjectSchema = z.object({

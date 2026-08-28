@@ -9,7 +9,7 @@ export const projectController = {
   }),
 
   getById: asyncHandler(async (req: Request, res: Response) => {
-    const project = await projectService.getById(req.params.id, req.user!.id);
+    const project = await projectService.getById(req.params.id!, req.user!.id);
     res.status(200).json({ project });
   }),
 
@@ -25,12 +25,12 @@ export const projectController = {
   }),
 
   update: asyncHandler(async (req: Request, res: Response) => {
-    const project = await projectService.update(req.params.id, req.user!.id, req.body);
+    const project = await projectService.update(req.params.id!, req.user!.id, req.body);
     res.status(200).json({ project });
   }),
 
   delete: asyncHandler(async (req: Request, res: Response) => {
-    await projectService.delete(req.params.id, req.user!.id);
+    await projectService.delete(req.params.id!, req.user!.id);
     res.status(204).send();
   }),
 };

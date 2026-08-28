@@ -15,7 +15,7 @@ export const projectRepository = {
     return prisma.project.findUnique({ where: { id } });
   },
 
-  create(data: { name: string; description?: string; ownerId: string }): Promise<Project> {
+  create(data: { name: string; description?: string; ownerId: string; isPrivate: boolean; password?: string }): Promise<Project> {
     return prisma.project.create({
       data: {
         ...data,
@@ -44,7 +44,7 @@ export const projectRepository = {
 
   },
 
-  update(id: string, data: { name?: string; description?: string }): Promise<Project> {
+  update(id: string, data: { name?: string; description?: string; isPrivate?: boolean; password?: string }): Promise<Project> {
     return prisma.project.update({ where: { id }, data });
   },
 

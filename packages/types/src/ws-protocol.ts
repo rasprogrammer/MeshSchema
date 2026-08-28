@@ -47,6 +47,10 @@ export interface ProjectJoinedMessage {
   peers: CollabUser[];
 }
 
+export interface ProjectLeftMessage {
+  type: "project:left";
+}
+
 export interface ProjectJoinErrorMessage {
   type: "project:join_error";
   error: string;
@@ -76,6 +80,7 @@ export interface SchemaEditBroadcastMessage {
 
 export type ServerMessage =
   | ProjectJoinedMessage
+  | ProjectLeftMessage
   | ProjectJoinErrorMessage
   | PresenceJoinMessage
   | PresenceLeaveMessage

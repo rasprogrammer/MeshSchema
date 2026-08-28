@@ -51,6 +51,9 @@ export const dbmlService = {
     try {
       const database = new Parser().parse(dbmlSource, "dbml");
       const schema = database.schemas[0];
+      if (!schema) {
+        throw new Error("no schema found");
+      }
       return {
         tables: schema.tables.map((t) => ({
           name: t.name,

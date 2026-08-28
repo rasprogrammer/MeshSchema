@@ -24,10 +24,12 @@ export function setAuthCookies(res: Response, tokens: AuthTokens): void {
   res.cookie(ACCESS_COOKIE, tokens.accessToken, {
     ...baseCookieOptions,
     maxAge: ACCESS_TOKEN_MAX_AGE_MS,
+    sameSite: "lax",
   });
   res.cookie(REFRESH_COOKIE, tokens.refreshToken, {
     ...baseCookieOptions,
     maxAge: REFRESH_TOKEN_MAX_AGE_MS,
+    sameSite: "lax",
   });
 }
 

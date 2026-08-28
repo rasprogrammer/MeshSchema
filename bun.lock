@@ -16,6 +16,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@dbml/core": "^3.5.7",
+        "@repo/backend-common": "*",
         "@repo/database": "*",
         "@repo/types": "*",
         "bcryptjs": "^2.4.3",
@@ -109,12 +110,12 @@
       "name": "@repo/ws",
       "dependencies": {
         "@repo/backend-common": "*",
-        "jsonwebtoken": "^9.0.3",
+        "@repo/types": "*",
+        "dotenv": "^16.4.5",
         "ws": "^8.21.3",
       },
       "devDependencies": {
         "@types/bun": "latest",
-        "@types/jsonwebtoken": "^9.0.10",
       },
       "peerDependencies": {
         "typescript": "^7",

@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@dbml/core": "^3.5.7",
+    "@repo/backend-common": "*",
     "@repo/database": "*",
     "@repo/types": "*",
     "bcryptjs": "^2.4.3",

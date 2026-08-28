@@ -123,7 +123,7 @@ async function streamClaude(
 /** Strips ```dbml fences etc, in case the model wraps output in markdown despite instructions. */
 function extractDbml(raw: string): string {
   const fenced = raw.match(/```(?:dbml)?\s*([\s\S]*?)```/i);
-  return (fenced ? fenced[1] : raw).trim();
+  return (fenced ? fenced[1] ?? raw : raw).trim();
 }
 
 const DBML_SYSTEM_PROMPT = `You are a senior database architect. You produce valid DBML (Database Markup Language, https://dbml.dbdiagram.io/docs) schema definitions.

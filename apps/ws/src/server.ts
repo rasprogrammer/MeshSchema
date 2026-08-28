@@ -1,77 +1,85 @@
-
+import http from "http";
 import { WebSocketServer } from "ws";
-import { handleRoomEvent } from "./RoomHandler";
-import { handleDiagramEvent } from "./DiagramHandler";
+import type { ClientMessage } from "@repo/types";
+import { handleProjectJoin, handleProjectLeave } from "./handlers/projectHandler";
+import { authenticateConnection } from "./services/auth";
 import { getToken } from "./services/getToken";
-import { authenticateToken } from "./services/auth";
+import { env } from "./config/env";
 
-const server = new WebSocketServer({ port: 3002 });
+const httpServer = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Hello from HTTP server\n');
+});
+
+
+const server = new WebSocketServer({ server: httpServer });
+
+console.log(`WebSocket server is running on ws://localhost:${env.port}`);
+
 
 server.on('connection', (ws, request) => {
-    ws.send('hello from websocket server');
 
-    // authentication logic can be added here if needed
-    const url = request.url;
-    if (!url) {
-        console.log('No URL provided, closing connection');
-        ws.close(1008, 'No URL provided');
-        return;
-    }
-    
-    const token = getToken(url);
-    console.log('Token:', token);
+    const url = request.url || '';
+    const urlParams = new URLSearchParams(url.split('?')[1]);
+    const projectId = urlParams.get('projectId');
 
-    if (!token) {
-        console.log('No token provided, closing connection');
-        ws.close(1008, 'No token provided');
+    console.log('projectId > ', projectId); 
+
+    if (!projectId) {
+        console.log('Missing projectId in connection URL');
+        ws.close(1008, 'Missing projectId');
         return;
     }
 
-    const isAuthenticated = authenticateToken(token);
-
-    if (!isAuthenticated) {
-        console.log('Authentication failed, closing connection');
-        ws.close(1008, 'Authentication failed');
+    const token = getToken(request);
+    const user = authenticateConnection(token);
+    if (!user) {
+        console.log('Invalid or expired access token, rejecting connection');
+        ws.close(4001, 'Unauthorized');
         return;
     }
 
-    const userId = isAuthenticated.id;
-    console.log(`User ${userId} connected`);
+    console.log('User connected ', user.id);
 
-    // roomId 
-    
-
-
-
-    ws.on('message', (raw) => {
+    ws.on('message', async (raw) => {
         try {
-            const payload = JSON.parse(raw.toString());
-            console.log('payload > ', payload);
 
+            const payload: ClientMessage = JSON.parse(raw.toString());
+            console.log('payload > ', payload);
+            
             switch (payload.type) {
-                case "room:join" : 
-                case "room:leave" :
-                    handleRoomEvent(payload, ws);
-                    break;
-                case "diagram:update" : 
-                case "diagram:save" : 
-                case "diagram:add-node" : 
-                case "diagram:remove-node" : 
-                case "diagram:add-edge" : 
-                case "diagram:remove-edge" :
-                    handleDiagramEvent(payload, ws);
-                    break;
+                case "project:join":
+                    return await handleProjectJoin(ws, payload.projectId, user);
+                case "project:leave":
+                    return await handleProjectLeave(ws, payload.projectId, user);
                 default:
-                    console.log('Unknown message type', payload.type);
+                    console.log('Unknown message type:', payload.type);
             }
-        } catch (error) {
+            
+            
+
+
+        } catch (error: any) {
             console.error('Failed to parse message', error);
+            ws.send(JSON.stringify({ 
+                type: "error", 
+                code: error?.code ?? "INTERNAL_ERROR",
+                message: error.message
+            }));
         }
     })
 
+    ws.on('error', (error) => {
+        console.error('WebSocket error:', error);
+    });
+
     ws.on('close', () => {
-        console.log('User disconnected'); 
+        console.log('User disconnected', user.id); 
     })
     
 });
 
+
+httpServer.listen(env.port, () => {
+    console.log(`HTTP server is running on http://localhost:${env.port}`);
+});

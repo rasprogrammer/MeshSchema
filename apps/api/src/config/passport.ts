@@ -33,7 +33,7 @@ async function findOrCreateOAuthUser(params: {
   let user = await userRepository.findByEmail(email);
   if (!user) {
     user = await userRepository.create({
-      name: name ?? email.split("@")[0],
+      name: name ?? email.split("@")[0] ?? email,
       email,
       emailVerifiedAt: new Date(),
     });

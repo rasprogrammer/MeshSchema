@@ -19,13 +19,18 @@ import { useCollabSession } from "@/features/collab-2/hooks/useCollabSession";
 import { LiveCursors } from "@/features/collab-2/components/LiveCursors";
 import { PresenceStack } from "@/features/collab-2/components/PresenceStack";
 import { Share } from "@/features/collab/components/Share";
+import { useProjectSocket } from "@/features/projects/hooks/useProjectSocket";
 
 export default function ProjectWorkspacePage({ params }: { params: Promise<{ id: string }> }) {
   const { id: projectId } = use(params);
 
-  const { data: project } = useProject(projectId);
-  const { data: schema, isLoading: schemaLoading } = useSchema(projectId);
-  const { status, notifyChange, saveNow } = useAutosave(projectId);
+  // const { data: project } = useProject(projectId);
+  const project = {
+    dbml: '',
+    name: ' '
+  }
+  // const { data: schema, isLoading: schemaLoading } = useSchema(projectId);
+  // const { status, notifyChange, saveNow } = useAutosave(projectId);
 
   const [dbml, setDbml] = useState<string | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
@@ -34,45 +39,52 @@ export default function ProjectWorkspacePage({ params }: { params: Promise<{ id:
   const diagramRef = useRef<DiagramCanvasHandle>(null);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
 
-  // --- Live collaboration: presence + cursors + remote schema edits ---
-  const { peers, broadcastCursor, broadcastSchemaEdit, onRemoteSchemaEdit } = useCollabSession(projectId);
+  
+  const { socket, messages, sendMessage } = useProjectSocket();
 
-  useEffect(() => {
-    return onRemoteSchemaEdit((remoteDbml) => {
-      // A peer edited the schema — reflect it locally without re-broadcasting.
-      editorRef.current?.applyText(remoteDbml);
-      setDbml(remoteDbml);
-      notifyChange(remoteDbml);
-    });
-  }, [onRemoteSchemaEdit, notifyChange]);
+  console.log('isconnected', socket?.readyState === WebSocket.OPEN);
+  console.log('messages', messages);
+
+  // --- Live collaboration: presence + cursors + remote schema edits ---
+  // const { peers, broadcastCursor, broadcastSchemaEdit, onRemoteSchemaEdit } = useCollabSession(projectId);
+
+  // useEffect(() => {
+  //   return onRemoteSchemaEdit((remoteDbml) => {
+  //     // A peer edited the schema — reflect it locally without re-broadcasting.
+  //     editorRef.current?.applyText(remoteDbml);
+  //     setDbml(remoteDbml);
+  //     notifyChange(remoteDbml);
+  //   });
+  // }, [onRemoteSchemaEdit, notifyChange]);
 
   function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
     const rect = canvasWrapperRef.current?.getBoundingClientRect();
     if (!rect) return;
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-    broadcastCursor(x, y);
+    // broadcastCursor(x, y);
   }
 
   // Seed local editor state once the schema loads (only once, to avoid
   // clobbering in-progress edits on background refetches).
-  useEffect(() => {
-    if (schema && dbml === null) {
-      setDbml(schema.dbml);
-    }
-  }, [schema, dbml]);
+  // useEffect(() => {
+    // console.log('schema', schema, 'dbml', dbml);
+    // if (schema && dbml === null) {
+    //   setDbml(schema.dbml);
+    // }
+  // }, [schema, dbml]);
 
   function handleEditorChange(value: string) {
     setDbml(value);
-    notifyChange(value);
-    broadcastSchemaEdit(value);
+    // notifyChange(value);
+    // broadcastSchemaEdit(value);
   }
 
   function handleApplyAiDbml(newDbml: string) {
     editorRef.current?.applyText(newDbml);
     setDbml(newDbml);
-    void saveNow(newDbml, { createVersion: true, versionLabel: "AI update" });
-    broadcastSchemaEdit(newDbml);
+    // void saveNow(newDbml, { createVersion: true, versionLabel: "AI update" });
+    // broadcastSchemaEdit(newDbml);
   }
 
   const isReady = dbml !== null;
@@ -89,12 +101,12 @@ export default function ProjectWorkspacePage({ params }: { params: Promise<{ id:
             </Link>
             <div>
               <p className="text-sm font-medium leading-tight">{project?.name ?? "Loading…"}</p>
-              <SaveStatusIndicator status={status} />
+              {/* <SaveStatusIndicator status={status} /> */}
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <PresenceStack peers={peers} />
+            {/* <PresenceStack peers={peers} /> */}
             <Button variant="outline" size="sm" onClick={() => editorRef.current?.undo()}>
               <Undo2 className="h-4 w-4" /> Undo
             </Button>
@@ -119,8 +131,9 @@ export default function ProjectWorkspacePage({ params }: { params: Promise<{ id:
 
         <div className="flex flex-1 overflow-hidden">
           <div ref={canvasWrapperRef} onPointerMove={handlePointerMove} className="relative flex-1 overflow-hidden">
-            <LiveCursors peers={peers} />
-            {!isReady || schemaLoading ? (
+            {/* <LiveCursors peers={peers} /> */}
+            {/* {!isReady || schemaLoading ? ( */}
+            {!isReady ? (
               <div className="flex h-full items-center justify-center">
                 <Skeleton className="h-2/3 w-2/3" />
               </div>
@@ -136,7 +149,7 @@ export default function ProjectWorkspacePage({ params }: { params: Promise<{ id:
 
           {aiOpen && isReady && (
             <div className="w-[380px] shrink-0">
-              <AiPanel currentDbml={dbml ?? ""} onClose={() => setAiOpen(false)} onApplyDbml={handleApplyAiDbml} />
+              {/* <AiPanel currentDbml={dbml ?? ""} onClose={() => setAiOpen(false)} onApplyDbml={handleApplyAiDbml} /> */}
             </div>
           )}
         </div>
