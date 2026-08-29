@@ -1,6 +1,7 @@
 import { Router } from "express";
-import {  verifyAccessToken } from "../utils/jwt.js";
+import { verifyAccessToken } from "../utils/jwt.js";
 import { getAccessTokenFromRequest } from "../utils/cookies.js";
+import { env } from "../config/env";
 import jwt from "jsonwebtoken";
 import { randomUUID } from "crypto";
 
@@ -22,7 +23,7 @@ router.post("/token", (req, res) => {
     const payload = verifyAccessToken(token);
     const wsToken = jwt.sign(
       { userId: payload.sub, role: "ws" },
-      process.env.JWT_SECRET!,
+      env.jwt.accessSecret,
       { expiresIn: "5m" }
     );
     res.json({ token: wsToken });

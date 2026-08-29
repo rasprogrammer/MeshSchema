@@ -16,8 +16,17 @@ export interface AccessTokenPayload extends JwtPayload {
  */
 export const verifyAccessToken = (token: string, secret: string): AccessTokenPayload => {
   const payload = jwt.verify(token, secret) as AccessTokenPayload;
-  if (payload.aud) {
+
+  // Reject 2FA temp tokens — they should only be accepted by the
+  // dedicated /auth/2fa/login-verify endpoint, never as a full session.
+  if (payload.aud === "2fa-pending") {
+    throw new Error("2FA-pending tokens cannot be used as access tokens");
+  }
+
+  if (!payload.sub || !payload.email) {
     throw new Error("Token is not a valid access token");
   }
+
   return payload;
 };
+

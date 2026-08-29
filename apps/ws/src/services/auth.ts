@@ -23,4 +23,4 @@ export function authenticateConnection(token: string | null): AuthenticatedUser 
   } catch {
     return null;
   }
-}
+}

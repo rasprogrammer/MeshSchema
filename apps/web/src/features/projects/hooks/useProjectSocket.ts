@@ -12,31 +12,94 @@ export const useProjectSocket = ({ projectId }: UseProjectSocketProps) => {
 
     const initialized = useRef(false);
 
-    const connectToWebSocket = useCallback(async () => {
+    // const connectToWebSocket = useCallback(async () => {
+    //     if (initialized.current) return;
+    //     initialized.current = true;
+
+    //     try {
+            
+    //         const tokenResponse = await fetch(`http://localhost:4000/api/v1/ws-auth/token`, {
+    //             method: "POST",
+    //             credentials: "include",
+    //         });
+    //         if (!tokenResponse.ok) {
+    //             throw new Error(`Failed to get WebSocket token: ${tokenResponse.statusText}`);
+    //         }
+
+
+    //         console.log("Got WS token, connecting to WebSocket...");
+
+    //         // Connect to WebSocket with token
+    //         const { token } = await tokenResponse.json();
+    //         const ws = new WebSocket(`ws://localhost:3002?projectId=${projectId}&token=${token}`);
+    //         socket.current = ws;
+
+    //         ws.onopen = () => {
+    //             console.log("WebSocket connection established.");
+    //         };
+
+    //         ws.onmessage = (event) => {
+    //             const data: ServerMessage = JSON.parse(event.data);
+    //             if (data.type === "project:joined") {
+    //                 console.log("Joined project:", data.self);
+    //             } else if (data.type === "project:left") {
+    //                 console.log("Left project");
+    //             }
+    //             console.log("Received message:", data);
+    //             setMessages((prev) => [...prev, event.data]);
+    //         };
+
+    //         ws.onclose = () => {
+    //             console.log("WebSocket connection closed.");
+    //             initialized.current = false;
+    //         };
+
+    //         ws.onerror = (error) => {
+    //             console.error("WebSocket error:", error);
+    //         };
+
+    //     } catch (error) {
+    //         console.error("Failed to connect to WebSocket:", error);
+    //         initialized.current = false;
+    //     }
+    // }, [projectId]);
+
+    console.log('mounting socket', socket.current);
+
+    useEffect(() => {
+        (async () => {
+        // connectToWebSocket();
         if (initialized.current) return;
         initialized.current = true;
 
         try {
             
+            const tokenResponse = await fetch(`http://localhost:4000/api/v1/ws-auth/token`, {
+                method: "POST",
+                credentials: "include",
+            });
+            if (!tokenResponse.ok) {
+                throw new Error(`Failed to get WebSocket token: ${tokenResponse.statusText}`);
+            }
+
+
             console.log("Got WS token, connecting to WebSocket...");
 
             // Connect to WebSocket with token
-            const ws = new WebSocket(`ws://localhost:3002?projectId=${projectId}`);
+            const { token } = await tokenResponse.json();
+            const ws = new WebSocket(`ws://localhost:3002?projectId=${projectId}&token=${token}`);
             socket.current = ws;
 
             ws.onopen = () => {
                 console.log("WebSocket connection established.");
-                setIsConnected(true);
             };
 
             ws.onmessage = (event) => {
                 const data: ServerMessage = JSON.parse(event.data);
                 if (data.type === "project:joined") {
                     console.log("Joined project:", data.self);
-                    setIsConnected(true);
                 } else if (data.type === "project:left") {
                     console.log("Left project");
-                    setIsConnected(false);
                 }
                 console.log("Received message:", data);
                 setMessages((prev) => [...prev, event.data]);
@@ -44,7 +107,6 @@ export const useProjectSocket = ({ projectId }: UseProjectSocketProps) => {
 
             ws.onclose = () => {
                 console.log("WebSocket connection closed.");
-                setIsConnected(false);
                 initialized.current = false;
             };
 
@@ -56,12 +118,6 @@ export const useProjectSocket = ({ projectId }: UseProjectSocketProps) => {
             console.error("Failed to connect to WebSocket:", error);
             initialized.current = false;
         }
-    }, [projectId]);
-
-    console.log('mounting socket', socket.current);
-
-    useEffect(() => {
-        connectToWebSocket();
 
         return () => {
             if (socket.current?.readyState === WebSocket.OPEN) {
@@ -70,7 +126,8 @@ export const useProjectSocket = ({ projectId }: UseProjectSocketProps) => {
             socket.current = null;
             initialized.current = false;
         };
-    }, [connectToWebSocket]);
+        })();
+    }, [projectId]);
 
     const sendMessage = (message: ClientMessage) => {
         if (socket.current && socket.current.readyState === WebSocket.OPEN) {

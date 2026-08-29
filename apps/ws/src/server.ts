@@ -23,7 +23,7 @@ server.on('connection', (ws, request) => {
     const urlParams = new URLSearchParams(url.split('?')[1]);
     const projectId = urlParams.get('projectId');
 
-    console.log('projectId > ', projectId); 
+
 
     if (!projectId) {
         console.log('Missing projectId in connection URL');
@@ -45,7 +45,7 @@ server.on('connection', (ws, request) => {
         try {
 
             const payload: ClientMessage = JSON.parse(raw.toString());
-            console.log('payload > ', payload);
+
             
             switch (payload.type) {
                 case "project:join":
