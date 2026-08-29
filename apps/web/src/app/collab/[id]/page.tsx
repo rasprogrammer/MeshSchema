@@ -7,39 +7,32 @@ import { RequireAuth } from "@/shared/components/RequireAuth";
 import { Button } from "@/shared/ui/button";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { SplitPane } from "@/shared/components/SplitPane";
-import { useProject, useUpdateProject } from "@/features/projects/hooks/useProjects";
+import { useProject } from "@/features/projects/hooks/useProjects";
 import { useSchema } from "@/features/editor/hooks/useSchema";
 import { useAutosave } from "@/features/editor/hooks/useAutosave";
 import { MonacoDbmlEditor, MonacoDbmlEditorHandle } from "@/features/editor/components/MonacoDbmlEditor";
 import { SaveStatusIndicator } from "@/features/editor/components/SaveStatusIndicator";
 import { DiagramCanvas, DiagramCanvasHandle } from "@/features/diagram/components/DiagramCanvas";
 import { AiPanel } from "@/features/ai/components/AiPanel";
-import { ExportMenu } from "@/features/export/components/ExportMenu";
 import { useCollabSession } from "@/features/collab/hooks/useCollabSession";
 import { LiveCursors } from "@/features/collab/components/LiveCursors";
 import { PresenceStack } from "@/features/collab/components/PresenceStack";
-import { Share } from "@/features/collab/components/Share";
 
-export default function ProjectWorkspacePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: projectId } = use(params);
-
-  const { data: project } = useProject(projectId);
-  const { mutate: updateProject } = useUpdateProject();
-  const { data: schema, isLoading: schemaLoading } = useSchema(projectId);
-  const { status, notifyChange, saveNow } = useAutosave(projectId);
+export default function CollabWorkspacePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: sessionId } = use(params);
 
   const [dbml, setDbml] = useState<string | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
-  const [collabEnabled, setCollabEnabled] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
 
+  const [sessionClosed, setSessionClosed] = useState(false);
   const editorRef = useRef<MonacoDbmlEditorHandle>(null);
   const diagramRef = useRef<DiagramCanvasHandle>(null);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
   const isApplyingRemoteUpdateRef = useRef(false);
 
   // --- Live collaboration: presence + cursors + remote schema edits ---
-  const { peers, connected, broadcastCursor, broadcastSchemaEdit, broadcastDiagramMove, broadcastSessionClosed, onRemoteSchemaEdit, onRemoteDiagramMove, onPeerJoin } = useCollabSession(sessionId, collabEnabled);
+  // A guest visiting this page is always joining the collab session
+  const { peers, connected, broadcastCursor, broadcastSchemaEdit, broadcastDiagramMove, onRemoteSchemaEdit, onRemoteDiagramMove, onSessionClosed } = useCollabSession(sessionId, true);
 
   useEffect(() => {
     return onRemoteSchemaEdit((remoteDbml) => {
@@ -47,9 +40,8 @@ export default function ProjectWorkspacePage({ params }: { params: Promise<{ id:
       isApplyingRemoteUpdateRef.current = true;
       editorRef.current?.applyText(remoteDbml);
       setDbml(remoteDbml);
-      notifyChange(remoteDbml);
     });
-  }, [onRemoteSchemaEdit, notifyChange]);
+  }, [onRemoteSchemaEdit]);
 
   useEffect(() => {
     return onRemoteDiagramMove((changes: any[]) => {
@@ -58,33 +50,10 @@ export default function ProjectWorkspacePage({ params }: { params: Promise<{ id:
   }, [onRemoteDiagramMove]);
 
   useEffect(() => {
-    return onPeerJoin((peer) => {
-      console.log("CollabSession: Peer joined event received on host side:", peer.email, "Current DBML length:", dbml?.length);
-      // When a new guest joins, broadcast the current dbml to initialize their editor
-      if (dbml) {
-        console.log("CollabSession: Broadcasting DBML to sync guest...");
-        broadcastSchemaEdit(dbml);
-      } else {
-        console.warn("CollabSession: Cannot broadcast DBML because it is null.");
-      }
+    return onSessionClosed(() => {
+      setSessionClosed(true);
     });
-  }, [onPeerJoin, dbml, broadcastSchemaEdit]);
-
-  // If the host joins a session and guests are already waiting, sync them!
-  const hasSyncedInitialRef = useRef(false);
-  useEffect(() => {
-    if (connected && dbml && peers.length > 0 && !hasSyncedInitialRef.current) {
-      console.log("CollabSession: Connected to active session with existing peers, broadcasting DBML...");
-      broadcastSchemaEdit(dbml);
-      hasSyncedInitialRef.current = true;
-    }
-  }, [connected, dbml, peers.length, broadcastSchemaEdit]);
-
-  useEffect(() => {
-    if (!connected) {
-      hasSyncedInitialRef.current = false;
-    }
-  }, [connected]);
+  }, [onSessionClosed]);
 
   function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
     const rect = canvasWrapperRef.current?.getBoundingClientRect();
@@ -94,32 +63,22 @@ export default function ProjectWorkspacePage({ params }: { params: Promise<{ id:
     broadcastCursor(x, y);
   }
 
-  function handleDiagramMove(changes: any[]) {
-    if (collabEnabled) broadcastDiagramMove(changes);
-  }
-
-  // Seed local editor state once the schema loads (only once, to avoid
-  // clobbering in-progress edits on background refetches).
-  useEffect(() => {
-    if (schema && dbml === null) {
-      setDbml(schema.dbml);
-    }
-  }, [schema, dbml]);
-
   function handleEditorChange(value: string) {
     if (isApplyingRemoteUpdateRef.current) {
         isApplyingRemoteUpdateRef.current = false;
         return; // Don't broadcast back remote updates to prevent loops
     }
     setDbml(value);
-    notifyChange(value);
     broadcastSchemaEdit(value);
+  }
+
+  function handleDiagramMove(changes: any[]) {
+    broadcastDiagramMove(changes);
   }
 
   function handleApplyAiDbml(newDbml: string) {
     editorRef.current?.applyText(newDbml);
     setDbml(newDbml);
-    void saveNow(newDbml, { createVersion: true, versionLabel: "AI update" });
     broadcastSchemaEdit(newDbml);
   }
 
@@ -136,19 +95,16 @@ export default function ProjectWorkspacePage({ params }: { params: Promise<{ id:
               </Button>
             </Link>
             <div>
-              <p className="text-sm font-medium leading-tight">{project?.name ?? "Loading…"}</p>
-              <SaveStatusIndicator status={status} />
+              <p className="text-sm font-medium leading-tight">Collab Session</p>
             </div>
             {/* WS Connection Indicator */}
-            {collabEnabled && (
-                <div title={connected ? "Connected to Collaboration Session" : "Connecting..."} className="flex items-center">
-                    {connected ? (
-                        <Wifi className="h-4 w-4 text-green-500" />
-                    ) : (
-                        <WifiOff className="h-4 w-4 text-gray-400" />
-                    )}
-                </div>
-            )}
+            <div title={connected ? "Connected to Collaboration Session" : "Connecting..."} className="flex items-center">
+                {connected ? (
+                    <Wifi className="h-4 w-4 text-green-500" />
+                ) : (
+                    <WifiOff className="h-4 w-4 text-gray-400" />
+                )}
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -162,41 +118,19 @@ export default function ProjectWorkspacePage({ params }: { params: Promise<{ id:
             <Button variant="outline" size="sm" onClick={() => diagramRef.current?.autoLayout()}>
               <LayoutGrid className="h-4 w-4" /> Auto layout
             </Button>
-            <ExportMenu
-              projectId={projectId}
-              projectName={project?.name ?? "schema"}
-              getDiagramElement={() => diagramRef.current?.getExportElement() ?? null}
-            />
             <Button variant="ai" size="sm" onClick={() => setAiOpen((v) => !v)}>
               <Sparkles className="h-4 w-4" /> AI Assistant
             </Button>
-
-            <Share 
-                projectId={projectId}
-                collabEnabled={collabEnabled} 
-                sessionId={sessionId}
-                onStartSession={() => {
-                  setSessionId(crypto.randomUUID());
-                  setCollabEnabled(true);
-                }} 
-                onStopSession={() => {
-                  broadcastSessionClosed();
-                  // Short delay to allow WS message to flush before disconnecting
-                  setTimeout(() => {
-                    setCollabEnabled(false);
-                    setSessionId(null);
-                  }, 100);
-                }} 
-            />
           </div>
         </header>
 
         <div className="flex flex-1 overflow-hidden">
           <div ref={canvasWrapperRef} onPointerMove={handlePointerMove} className="relative flex-1 overflow-hidden">
             <LiveCursors peers={peers} />
-            {!isReady || schemaLoading ? (
-              <div className="flex h-full items-center justify-center">
-                <Skeleton className="h-2/3 w-2/3" />
+            {!isReady ? (
+              <div className="flex h-full flex-col items-center justify-center text-gray-500 gap-4">
+                 <Skeleton className="h-2/3 w-2/3" />
+                 <p>Waiting for host to sync DBML...</p>
               </div>
             ) : (
               <SplitPane
@@ -214,6 +148,26 @@ export default function ProjectWorkspacePage({ params }: { params: Promise<{ id:
             </div>
           )}
         </div>
+
+        {/* Session Closed Modal */}
+        {sessionClosed && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-xl bg-card p-8 shadow-2xl text-center border">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+                <WifiOff className="h-6 w-6 text-destructive" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold">Session Ended</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  The host has ended this collaboration session. You can no longer view or edit this project.
+                </p>
+              </div>
+              <Link href="/dashboard" className="w-full mt-4">
+                <Button className="w-full">Return to Dashboard</Button>
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </RequireAuth>
   );

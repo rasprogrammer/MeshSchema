@@ -11,12 +11,15 @@ import {
   useNodesState,
   useEdgesState,
   useReactFlow,
+  applyNodeChanges,
+  type NodeChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { TableNode } from "./TableNode";
 import { buildLayoutedGraph } from "../lib/layout";
 import { parseDbml } from "../lib/parseDbml";
 import { AlertTriangle } from "lucide-react";
+import { useCallback } from "react";
 
 const nodeTypes = { tableNode: TableNode };
 
@@ -25,21 +28,32 @@ export interface DiagramCanvasHandle {
   autoLayout: () => void;
   /** DOM node to rasterize for PNG/SVG export. */
   getExportElement: () => HTMLDivElement | null;
+  /** Apply remote node changes without triggering local change handlers. */
+  applyRemoteNodeChanges: (changes: NodeChange[]) => void;
 }
 
 interface Props {
   dbml: string;
+  onNodesChange?: (changes: NodeChange[]) => void;
 }
 
 function DiagramCanvasInner(
-  { dbml }: Props,
+  { dbml, onNodesChange: onNodesChangeProp }: Props,
   ref: React.ForwardedRef<DiagramCanvasHandle>
 ) {
-  const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
+  const [nodes, setNodes, onNodesChangeInternal] = useNodesState<any>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { fitView } = useReactFlow();
   const parseError = useRef<string | null>(null);
+
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      onNodesChangeInternal(changes);
+      onNodesChangeProp?.(changes);
+    },
+    [onNodesChangeInternal, onNodesChangeProp]
+  );
 
   useEffect(() => {
     const parsed = parseDbml(dbml);
@@ -63,6 +77,9 @@ function DiagramCanvasInner(
       setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50);
     },
     getExportElement: () => wrapperRef.current,
+    applyRemoteNodeChanges: (changes: NodeChange[]) => {
+      setNodes((nds) => applyNodeChanges(changes, nds));
+    },
   }));
 
   const parsed = parseDbml(dbml);
@@ -91,7 +108,7 @@ function DiagramCanvasInner(
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        onNodesChange={onNodesChange}
+        onNodesChange={handleNodesChange}
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         proOptions={{ hideAttribution: true }}

@@ -15,12 +15,12 @@ import type { CollabUser, CursorPosition } from "./collab";
 
 export interface ProjectJoinMessage {
   type: "project:join";
-  projectId: string;
+  roomId: string;
 }
 
 export interface ProjectLeaveMessage {
   type: "project:leave";
-  projectId: string;
+  roomId: string;
 }
 
 export interface CursorMoveMessage {
@@ -33,11 +33,22 @@ export interface SchemaEditMessage {
   dbml: string;
 }
 
+export interface DiagramMoveMessage {
+  type: "diagram:move";
+  changes: any[];
+}
+
+export interface SessionClosedMessage {
+  type: "session:closed";
+}
+
 export type ClientMessage =
   | ProjectJoinMessage
   | ProjectLeaveMessage
   | CursorMoveMessage
-  | SchemaEditMessage;
+  | SchemaEditMessage
+  | DiagramMoveMessage
+  | SessionClosedMessage;
 
 // ---- Server -> Client ---------------------------------------------------
 
@@ -78,6 +89,16 @@ export interface SchemaEditBroadcastMessage {
   userId: string;
 }
 
+export interface DiagramMoveBroadcastMessage {
+  type: "diagram:move";
+  changes: any[];
+  userId: string;
+}
+
+export interface SessionClosedBroadcastMessage {
+  type: "session:closed";
+}
+
 export type ServerMessage =
   | ProjectJoinedMessage
   | ProjectLeftMessage
@@ -85,7 +106,9 @@ export type ServerMessage =
   | PresenceJoinMessage
   | PresenceLeaveMessage
   | CursorBroadcastMessage
-  | SchemaEditBroadcastMessage;
+  | SchemaEditBroadcastMessage
+  | DiagramMoveBroadcastMessage
+  | SessionClosedBroadcastMessage;
 
 export function isClientMessage(value: unknown): value is ClientMessage {
   if (typeof value !== "object" || value === null || !("type" in value)) {
@@ -96,6 +119,8 @@ export function isClientMessage(value: unknown): value is ClientMessage {
     type === "project:join" ||
     type === "project:leave" ||
     type === "cursor:move" ||
-    type === "schema:edit"
+    type === "schema:edit" ||
+    type === "diagram:move" ||
+    type === "session:closed"
   );
 }

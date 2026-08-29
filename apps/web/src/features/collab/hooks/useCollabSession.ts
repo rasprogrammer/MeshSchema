@@ -1,130 +1,184 @@
-import { ServerMessage } from "@repo/types";
-import { useCallback, useEffect, useRef } from "react";
+"use client";
 
-let globalSocket: WebSocket | null = null;
-let activeRoomId: string | null = null;
-let activeConnections = 0;
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { CollabUser, ServerMessage } from "@repo/types";
+import { getCollabSocket } from "../lib/socket";
 
-interface useCollabSessionProps {
-    projectId: string;
-    roomId: string;
-    token: string;
-    onMessage?: (message: ServerMessage) => void;
-    onOpen?: () => void;
-    onClose?: () => void;
+interface PeerState extends CollabUser {
+  position: { x: number; y: number } | null;
 }
 
-
-export function useCollabSession({projectId, roomId, token, onMessage, onOpen, onClose}: useCollabSessionProps) {
-
-    const socketRef = useRef<WebSocket | null>(null);
-    const connectingRef = useRef<boolean>(false);
-    const retryCountRef = useRef<number>(0);
-    const MAX_RETRIES = 5;
-    
-    // store callbacks in refs to avoid re-creating them on every render
-    const onMessageRef = useRef(onMessage);
-    const onOpenRef = useRef(onOpen);
-    const onCloseRef = useRef(onClose);
-
-    // Update refs when props change
-    useEffect(() => {
-        onMessageRef.current = onMessage;
-        onOpenRef.current = onOpen;
-        onCloseRef.current = onClose;
-    }, [onMessage, onOpen, onClose]);
-
-    const sendMessage = (message: any) => {
-        const socket = socketRef.current;
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify(message));
-        }
-    };
-
-    const connectWebSocket = useCallback(() => {
-        if (!token || connectingRef.current || retryCountRef.current >= MAX_RETRIES) {
-            return;
-        }
-        
-        // If we have an existing socket and it's open, we don't need to create a new one
-        if (globalSocket && globalSocket.readyState === WebSocket.OPEN) {
-            socketRef.current = globalSocket;
-            activeConnections++;
-            
-            onOpenRef.current?.();
-            return;
-        }
-
-        connectingRef.current = true;
-        
-        try {
-            const wsUrl = `${process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:4001"}/collab?projectId=${projectId}&roomId=${roomId}&token=${token}`;
-            const socket = new WebSocket(wsUrl);
-            
-            socketRef.current = socket;
-            globalSocket = socket;
-            activeConnections++;
-
-            socket.onopen = () => {
-                connectingRef.current = false;
-                retryCountRef.current = 0;
-                activeRoomId = roomId;
-                onOpenRef.current?.();
-            }
-
-            socket.onmessage = (event) => {
-                const message = JSON.parse(event.data);
-                onMessageRef.current?.(message);
-            };
-
-            socket.onclose = () => {
-                connectingRef.current = false;
-                activeConnections--;
-                if (activeRoomId === roomId) {
-                    activeRoomId = null;
-                }
-                onCloseRef.current?.();
-                if (retryCountRef.current < MAX_RETRIES) {
-                    retryCountRef.current++;
-                    setTimeout(connectWebSocket, 1000 * retryCountRef.current); // Exponential backoff
-                }
-            };
-
-            socket.onerror = (error) => {
-                console.error("WebSocket error:", error);
-                socket.close();
-            }
-
-        } catch (error) {
-            console.error("Error creating or joining room:", error);
-            connectingRef.current = false;
-            retryCountRef.current++;
-            setTimeout(connectWebSocket, 1000 * retryCountRef.current); // Exponential backoff
-        }
-
-    }, [projectId, roomId, token]);
-
-    useEffect(() => {
-        connectWebSocket();
-
-        return () => {
-            const socket = socketRef.current;
-            if (socket) {
-                activeConnections--;
-                if (activeConnections <= 0) {
-                    socket.close();
-                    globalSocket = null;
-                    activeRoomId = null;
-                }
-            }
-        };
-    }, [connectWebSocket, token, projectId, roomId]);
-
-
-    return {
-        sendMessage,
-        isConnected: socketRef.current?.readyState === WebSocket.OPEN,
-    };
-
+interface UseCollabSessionResult {
+  peers: PeerState[];
+  connected: boolean;
+  /** Call on pointer move within the shared canvas (percentage-based coords, 0-100). */
+  broadcastCursor: (x: number, y: number) => void;
+  /** Call to broadcast a live DBML edit to peers so their diagram stays in sync. */
+  broadcastSchemaEdit: (dbml: string) => void;
+  /** Call to broadcast diagram movement changes. */
+  broadcastDiagramMove: (changes: any[]) => void;
+  /** Call to broadcast that the session has been closed. */
+  broadcastSessionClosed: () => void;
+  /** Subscribe to remote DBML edits (returns an unsubscribe fn). */
+  onRemoteSchemaEdit: (cb: (dbml: string) => void) => () => void;
+  /** Subscribe to remote diagram movement (returns an unsubscribe fn). */
+  onRemoteDiagramMove: (cb: (changes: any[]) => void) => () => void;
+  /** Subscribe to session closed events. */
+  onSessionClosed: (cb: () => void) => () => void;
+  /** Subscribe to peer join events. */
+  onPeerJoin: (cb: (peer: PeerState) => void) => () => void;
 }
 
+const CURSOR_THROTTLE_MS = 40;
+
+export function useCollabSession(roomId: string | null, enabled: boolean = true): UseCollabSessionResult {
+  const [peers, setPeers] = useState<Record<string, PeerState>>({});
+  const [connected, setConnected] = useState(false);
+  const lastSentRef = useRef(0);
+  const remoteEditListeners = useRef(new Set<(dbml: string) => void>());
+  const remoteDiagramListeners = useRef(new Set<(changes: any[]) => void>());
+  const sessionClosedListeners = useRef(new Set<() => void>());
+  const peerJoinListeners = useRef(new Set<(peer: PeerState) => void>());
+  const roomIdRef = useRef(roomId);
+  roomIdRef.current = roomId;
+
+  const joinProject = useCallback(() => {
+    if (!roomId) return;
+    getCollabSocket().send({ type: "project:join", roomId: roomId });
+  }, [roomId]);
+
+  useEffect(() => {
+    if (!enabled || !roomId) {
+      if (connected) {
+        getCollabSocket().send({ type: "project:leave", roomId: roomIdRef.current! });
+        getCollabSocket().disconnect();
+        setConnected(false);
+        setPeers({});
+      }
+      return;
+    }
+
+    const socket = getCollabSocket();
+
+    const handleMessage = (message: ServerMessage) => {
+      switch (message.type) {
+        case "project:joined": {
+          const next: Record<string, PeerState> = {};
+          for (const peer of message.peers) next[peer.id] = { ...peer, position: null };
+          setPeers(next);
+          setConnected(true);
+          break;
+        }
+        case "project:join_error": {
+          setConnected(false);
+          break;
+        }
+        case "presence:join": {
+          const newPeer = { ...message.user, position: null };
+          setPeers((prev) => ({ ...prev, [message.user.id]: newPeer }));
+          peerJoinListeners.current.forEach((cb) => cb(newPeer));
+          break;
+        }
+        case "presence:leave": {
+          setPeers((prev) => {
+            const next = { ...prev };
+            delete next[message.userId];
+            return next;
+          });
+          break;
+        }
+        case "cursor:move": {
+          setPeers((prev) => ({
+            ...prev,
+            [message.user.id]: { ...message.user, position: message.position },
+          }));
+          break;
+        }
+        case "schema:edit": {
+          remoteEditListeners.current.forEach((cb) => cb(message.dbml));
+          break;
+        }
+        case "diagram:move": {
+          remoteDiagramListeners.current.forEach((cb) => cb(message.changes));
+          break;
+        }
+        case "session:closed": {
+          sessionClosedListeners.current.forEach((cb) => cb());
+          break;
+        }
+      }
+    }
+
+    const unsubscribeMessage = socket.onMessage(handleMessage);
+    const unsubscribeConnection = socket.onConnectionChange((isConnected) => {
+      if (isConnected) joinProject();
+      else setConnected(false);
+    });
+
+    socket.connect();
+    if (socket.connected) joinProject();
+
+    return () => {
+      if (roomIdRef.current) {
+        socket.send({ type: "project:leave", roomId: roomIdRef.current });
+      }
+      unsubscribeMessage();
+      unsubscribeConnection();
+      setPeers({});
+      setConnected(false);
+      socket.disconnect(); // explicit disconnection when stopping session
+    };
+  }, [roomId]);
+
+  const broadcastCursor = useCallback((x: number, y: number) => {
+    const now = Date.now();
+    if (now - lastSentRef.current < CURSOR_THROTTLE_MS) return;
+    lastSentRef.current = now;
+    getCollabSocket().send({ type: "cursor:move", position: { x, y } });
+  }, []);
+
+  const broadcastSchemaEdit = useCallback((dbml: string) => {
+    getCollabSocket().send({ type: "schema:edit", dbml });
+  }, []);
+
+  const broadcastDiagramMove = useCallback((changes: any[]) => {
+    getCollabSocket().send({ type: "diagram:move", changes });
+  }, []);
+
+  const broadcastSessionClosed = useCallback(() => {
+    getCollabSocket().send({ type: "session:closed" });
+  }, []);
+
+  const onRemoteSchemaEdit = useCallback((cb: (dbml: string) => void) => {
+    remoteEditListeners.current.add(cb);
+    return () => remoteEditListeners.current.delete(cb);
+  }, []);
+
+  const onRemoteDiagramMove = useCallback((cb: (changes: any[]) => void) => {
+    remoteDiagramListeners.current.add(cb);
+    return () => remoteDiagramListeners.current.delete(cb);
+  }, []);
+
+  const onSessionClosed = useCallback((cb: () => void) => {
+    sessionClosedListeners.current.add(cb);
+    return () => sessionClosedListeners.current.delete(cb);
+  }, []);
+
+  const onPeerJoin = useCallback((cb: (peer: PeerState) => void) => {
+    peerJoinListeners.current.add(cb);
+    return () => peerJoinListeners.current.delete(cb);
+  }, []);
+
+  return { 
+    peers: Object.values(peers), 
+    connected, 
+    broadcastCursor, 
+    broadcastSchemaEdit, 
+    broadcastDiagramMove,
+    broadcastSessionClosed,
+    onRemoteSchemaEdit, 
+    onRemoteDiagramMove,
+    onSessionClosed,
+    onPeerJoin 
+  };
+}

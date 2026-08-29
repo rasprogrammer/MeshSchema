@@ -17,6 +17,6 @@ export interface CreateProjectPayload {
 export interface UpdateProjectPayload {
   name?: string;
   description?: string;
-  isPrivate: boolean;
+  isPrivate?: boolean;
   password?: string;
 }
