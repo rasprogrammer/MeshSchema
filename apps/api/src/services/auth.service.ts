@@ -143,6 +143,15 @@ export const authService = {
     }
   },
 
+  /** Used by /auth/me — the access token only carries id/email, so this refetches the full profile. */
+  async getCurrentUser(userId: string) {
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new UnauthorizedError("User no longer exists");
+    }
+    return publicUser(user);
+  },
+
   // --- TOTP-based 2FA management (requires an authenticated session) ---
 
   async setupTwoFactor(userId: string) {

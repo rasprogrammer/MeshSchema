@@ -47,7 +47,8 @@ export const authController = {
   }),
 
   me: asyncHandler(async (req: Request, res: Response) => {
-    res.status(200).json({ user: req.user });
+    const user = await authService.getCurrentUser(req.user!.id);
+    res.status(200).json({ user });
   }),
 
   // --- 2FA management (authenticated) ---

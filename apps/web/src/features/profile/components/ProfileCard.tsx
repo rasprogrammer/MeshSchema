@@ -8,6 +8,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { useProfile, useAvatarUpdate } from "../hooks/useProfile";
 import { useAuthStore } from "@/store/auth.store";
+import { AvatarCropDialog } from "./AvatarCropDialog";
 
 interface Props {
     onUpdatePassword: () => void;
@@ -21,6 +22,7 @@ export function ProfileCard({ onUpdatePassword }: Props) {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [name, setName] = useState(storeUser?.name || "");
+    const [pendingAvatar, setPendingAvatar] = useState<{ file: File; previewUrl: string } | null>(null);
 
     // Fixed TypeScript type and syntax error
     const handleProfileUpdate = (e: React.FormEvent<HTMLFormElement | HTMLButtonElement>) => {
@@ -32,9 +34,18 @@ export function ProfileCard({ onUpdatePassword }: Props) {
     const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            avatarUpdate.mutate(file);
+            setPendingAvatar({ file, previewUrl: URL.createObjectURL(file) });
         }
         e.target.value = "";
+    };
+
+    const closeCropDialog = () => {
+        if (pendingAvatar) URL.revokeObjectURL(pendingAvatar.previewUrl);
+        setPendingAvatar(null);
+    };
+
+    const handleCropConfirm = (croppedFile: File) => {
+        avatarUpdate.mutate(croppedFile, { onSuccess: closeCropDialog });
     };
 
     return (
@@ -75,6 +86,17 @@ export function ProfileCard({ onUpdatePassword }: Props) {
             </Button>
             </CardContent>
         </Card>
+
+        {pendingAvatar && (
+            <AvatarCropDialog
+                open
+                imageSrc={pendingAvatar.previewUrl}
+                fileName={pendingAvatar.file.name}
+                isSaving={avatarUpdate.isPending}
+                onCancel={closeCropDialog}
+                onConfirm={handleCropConfirm}
+            />
+        )}
 
         {/* Personal Information */}
         <Card>
