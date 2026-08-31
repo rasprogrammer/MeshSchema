@@ -11,6 +11,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:migrate": "prisma migrate dev",
     "studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
@@ -22,6 +23,7 @@
   "devDependencies": {
     "@repo/typescript-config": "*",
     "prisma": "^7.9.0",
+    "tsx": "^4.23.13",
     "typescript": "^5.9.3"
   }
 }

@@ -53,7 +53,7 @@ export function Topbar({ children }: { children?: React.ReactNode }) {
           >
             <Avatar className="h-9 w-9">
               <AvatarImage
-                src={user?.profilePath || ""}
+                src={user?.avatarUrl || ""}
                 alt={user?.name || "User"}
               />
               <AvatarFallback>{initials}</AvatarFallback>

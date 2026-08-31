@@ -39,3 +39,20 @@ export function usePasswordUpdate(options?: { onSuccess?: () => void }) {
         }
     })
 }
+
+export function useAvatarUpdate() {
+
+    const { toast } = useToast();
+    const setUser = useAuthStore((s) => s.setUser);
+
+    return useMutation({
+        mutationFn: (file: File) => profileApi.updateAvatar(file),
+        onSuccess: (data) => {
+            toast({title : "Profile photo updated"});
+            setUser(data.user as AuthUser);
+        },
+        onError: (error) => {
+            toast({title : "Photo update failed", description: getErrorMessage(error), variant: "destructive"});
+        }
+    })
+}

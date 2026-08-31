@@ -15,8 +15,14 @@ import { totpService } from "./totp.service";
 
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-function publicUser(user: { id: string; name: string; email: string; twoFactorEnabled?: boolean }) {
-  return { id: user.id, name: user.name, email: user.email, twoFactorEnabled: !!user.twoFactorEnabled };
+function publicUser(user: { id: string; name: string; email: string; twoFactorEnabled?: boolean; avatarUrl?: string | null }) {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    twoFactorEnabled: !!user.twoFactorEnabled,
+    avatarUrl: user.avatarUrl ?? undefined,
+  };
 }
 
 async function issueTokens(user: { id: string; email: string }): Promise<AuthTokens> {

@@ -1,12 +1,12 @@
 import { Camera } from "lucide-react";
-import React, { useEffect, useState } from "react"; // Added useState
+import React, { useRef, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { useProfile } from "../hooks/useProfile";
+import { useProfile, useAvatarUpdate } from "../hooks/useProfile";
 import { useAuthStore } from "@/store/auth.store";
 
 interface Props {
@@ -17,6 +17,8 @@ export function ProfileCard({ onUpdatePassword }: Props) {
     // Mock user data initial state
     const storeUser = useAuthStore((s) => s.user);
     const profile = useProfile();
+    const avatarUpdate = useAvatarUpdate();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [name, setName] = useState(storeUser?.name || "");
 
@@ -27,13 +29,21 @@ export function ProfileCard({ onUpdatePassword }: Props) {
         profile.mutate({ name });
     };
 
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            avatarUpdate.mutate(file);
+        }
+        e.target.value = "";
+    };
+
     return (
         <div className="space-y-6">
         {/* Avatar */}
         <Card>
             <CardContent className="flex flex-col items-center gap-5 py-8 md:flex-row">
             <Avatar className="h-28 w-28">
-                <AvatarImage src={storeUser?.profilePath} />
+                <AvatarImage src={storeUser?.avatarUrl} />
                 <AvatarFallback className="text-3xl">
                 {storeUser?.name ? storeUser.name[0] : "?"}
                 </AvatarFallback>
@@ -47,9 +57,21 @@ export function ProfileCard({ onUpdatePassword }: Props) {
                 </p>
             </div>
 
-            <Button variant="outline">
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="hidden"
+                onChange={handleAvatarChange}
+            />
+
+            <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={avatarUpdate.isPending}
+            >
                 <Camera className="mr-2 h-4 w-4" />
-                Change Photo
+                {avatarUpdate.isPending ? "Uploading…" : "Change Photo"}
             </Button>
             </CardContent>
         </Card>

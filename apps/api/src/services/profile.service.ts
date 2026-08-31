@@ -14,10 +14,26 @@ export const profileService = {
                 id: true, 
                 name: true, 
                 email: true,
+                avatarUrl: true,
             }
         });
 
         return { user }; 
+    },
+
+    async updateAvatar(userId: string, avatarUrl: string) {
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: { avatarUrl },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                avatarUrl: true,
+            }
+        });
+
+        return { user };
     },
 
     async updatePassword(userId: string, input: UpdatePasswordInput) {

@@ -8,6 +8,15 @@ export const profileApi = {
         return data;
     },
 
+    async updateAvatar(file: File) {
+        const formData = new FormData();
+        formData.append("avatar", file);
+        const { data } = await apiClient.post("/profile/avatar", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+        return data;
+    },
+
     async updatePassword(payload: updatePasswordPayload) {
         const { data } = await apiClient.post("/profile/update-password", payload);
         return data;

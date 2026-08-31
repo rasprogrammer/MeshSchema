@@ -1,3 +1,4 @@
+import path from "path";
 import express, { Application } from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -11,7 +12,7 @@ import { httpLogger } from "./utils/logger";
 export function createApp(): Application {
   const app = express();
 
-  app.use(helmet());
+  app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
   app.use(
     cors({
       origin: env.corsOrigin,
@@ -23,6 +24,7 @@ export function createApp(): Application {
   app.use(passport.initialize() as unknown as express.RequestHandler);
   app.use(httpLogger);
 
+  app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
   app.use(env.apiPrefix, routes);
 
   app.use(notFoundHandler);

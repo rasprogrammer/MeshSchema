@@ -6,7 +6,7 @@ export interface AuthUser {
   name: string;
   email: string;
   twoFactorEnabled?: boolean;
-  profilePath?: string;
+  avatarUrl?: string;
 }
 
 interface AuthState {
