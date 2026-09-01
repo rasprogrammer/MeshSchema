@@ -28,9 +28,9 @@ export function DeleteProjectDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete &quot;{project.name}&quot;?</DialogTitle>
+          <DialogTitle>Move &quot;{project.name}&quot; to trash?</DialogTitle>
           <DialogDescription>
-            This permanently deletes the project, its schema, and all saved versions. This cannot be undone.
+            The project moves to the trash view, where it can be restored or permanently deleted later.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -42,7 +42,7 @@ export function DeleteProjectDialog({
             disabled={deleteProject.isPending}
             onClick={() => deleteProject.mutate(project.id, { onSuccess: () => onOpenChange(false) })}
           >
-            {deleteProject.isPending ? "Deleting…" : "Delete project"}
+            {deleteProject.isPending ? "Moving…" : "Move to trash"}
           </Button>
         </DialogFooter>
       </DialogContent>

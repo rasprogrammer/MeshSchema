@@ -2,12 +2,13 @@
 
 import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, LayoutGrid, Sparkles, Undo2, Redo2, Wifi, WifiOff } from "lucide-react";
+import { ArrowLeft, LayoutGrid, Sparkles, Undo2, Redo2, Wifi, WifiOff, UserPlus } from "lucide-react";
 import { RequireAuth } from "@/shared/components/RequireAuth";
 import { Button } from "@/shared/ui/button";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { SplitPane } from "@/shared/components/SplitPane";
 import { useProject, useUpdateProject } from "@/features/projects/hooks/useProjects";
+import { InviteDialog } from "@/features/projects/components/dialogs/InviteDialog";
 import { useSchema } from "@/features/editor/hooks/useSchema";
 import { useAutosave } from "@/features/editor/hooks/useAutosave";
 import { MonacoDbmlEditor, MonacoDbmlEditorHandle } from "@/features/editor/components/MonacoDbmlEditor";
@@ -32,6 +33,7 @@ export default function ProjectWorkspacePage({ params }: { params: Promise<{ id:
   const [aiOpen, setAiOpen] = useState(false);
   const [collabEnabled, setCollabEnabled] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const editorRef = useRef<MonacoDbmlEditorHandle>(null);
   const diagramRef = useRef<DiagramCanvasHandle>(null);
@@ -39,7 +41,7 @@ export default function ProjectWorkspacePage({ params }: { params: Promise<{ id:
   const isApplyingRemoteUpdateRef = useRef(false);
 
   // --- Live collaboration: presence + cursors + remote schema edits ---
-  const { peers, connected, broadcastCursor, broadcastSchemaEdit, broadcastDiagramMove, broadcastSessionClosed, onRemoteSchemaEdit, onRemoteDiagramMove, onPeerJoin } = useCollabSession(sessionId, collabEnabled);
+  const { peers, connected, broadcastCursor, broadcastSchemaEdit, broadcastDiagramMove, broadcastSessionClosed, onRemoteSchemaEdit, onRemoteDiagramMove, onPeerJoin } = useCollabSession(sessionId, collabEnabled, projectId);
 
   useEffect(() => {
     return onRemoteSchemaEdit((remoteDbml) => {
@@ -171,6 +173,10 @@ export default function ProjectWorkspacePage({ params }: { params: Promise<{ id:
               <Sparkles className="h-4 w-4" /> AI Assistant
             </Button>
 
+            <Button variant="outline" size="sm" onClick={() => setInviteOpen(true)}>
+              <UserPlus className="h-4 w-4" /> Invite
+            </Button>
+
             <Share 
                 projectId={projectId}
                 collabEnabled={collabEnabled} 
@@ -190,6 +196,8 @@ export default function ProjectWorkspacePage({ params }: { params: Promise<{ id:
             />
           </div>
         </header>
+
+        <InviteDialog projectId={projectId} open={inviteOpen} onOpenChange={setInviteOpen} />
 
         <div className="flex flex-1 overflow-hidden">
           <div ref={canvasWrapperRef} onPointerMove={handlePointerMove} className="relative flex-1 overflow-hidden">

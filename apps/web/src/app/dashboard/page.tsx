@@ -1,7 +1,10 @@
+import Link from "next/link";
+import { Trash2 } from "lucide-react";
 import { ProjectList } from "@/features/projects/components/ProjectList";
 import { CreateProjectDialog } from "@/features/projects/components/dialogs/CreateProjectDialog";
 import { RequireAuth } from "@/shared/components/RequireAuth";
 import { Topbar } from "@/shared/components/Topbar";
+import { Button } from "@/shared/ui/button";
 import StarterTemplateList from "@/features/starter-templates/components/StarterTemplateList";
 
 export default function DashboardPage() {
@@ -15,7 +18,14 @@ export default function DashboardPage() {
               <h1 className="text-2xl font-semibold">Projects</h1>
               <p className="text-sm text-muted-foreground">Every schema you&apos;re designing, in one place.</p>
             </div>
-            <CreateProjectDialog />
+            <div className="flex items-center gap-2">
+              <Link href="/dashboard/trash">
+                <Button variant="outline">
+                  <Trash2 className="h-4 w-4" /> Trash
+                </Button>
+              </Link>
+              <CreateProjectDialog />
+            </div>
           </div>
           <ProjectList />
 

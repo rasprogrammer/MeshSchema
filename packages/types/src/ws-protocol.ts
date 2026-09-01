@@ -16,6 +16,8 @@ import type { CollabUser, CursorPosition } from "./collab";
 export interface ProjectJoinMessage {
   type: "project:join";
   roomId: string;
+  /** Real project id, so the server can enforce project roles and table locks for this connection. */
+  projectId?: string;
 }
 
 export interface ProjectLeaveMessage {
@@ -31,6 +33,18 @@ export interface CursorMoveMessage {
 export interface SchemaEditMessage {
   type: "schema:edit";
   dbml: string;
+  /** If the edit is scoped to a single table, the server checks it isn't locked by someone else. */
+  tableName?: string;
+}
+
+export interface TableLockAcquireMessage {
+  type: "table:lock";
+  tableName: string;
+}
+
+export interface TableLockReleaseMessage {
+  type: "table:unlock";
+  tableName: string;
 }
 
 export interface DiagramMoveMessage {
@@ -48,7 +62,9 @@ export type ClientMessage =
   | CursorMoveMessage
   | SchemaEditMessage
   | DiagramMoveMessage
-  | SessionClosedMessage;
+  | SessionClosedMessage
+  | TableLockAcquireMessage
+  | TableLockReleaseMessage;
 
 // ---- Server -> Client ---------------------------------------------------
 
@@ -99,6 +115,30 @@ export interface SessionClosedBroadcastMessage {
   type: "session:closed";
 }
 
+/** Sent privately (not broadcast) to the sender when their edit is rejected server-side. */
+export interface SchemaEditRejectedMessage {
+  type: "schema:edit_rejected";
+  reason: string;
+}
+
+export interface TableLockedMessage {
+  type: "table:locked";
+  tableName: string;
+  userId: string;
+}
+
+export interface TableUnlockedMessage {
+  type: "table:unlocked";
+  tableName: string;
+}
+
+/** Sent privately (not broadcast) to the requester when a lock can't be acquired. */
+export interface TableLockDeniedMessage {
+  type: "table:lock_denied";
+  tableName: string;
+  reason: string;
+}
+
 export type ServerMessage =
   | ProjectJoinedMessage
   | ProjectLeftMessage
@@ -108,7 +148,11 @@ export type ServerMessage =
   | CursorBroadcastMessage
   | SchemaEditBroadcastMessage
   | DiagramMoveBroadcastMessage
-  | SessionClosedBroadcastMessage;
+  | SessionClosedBroadcastMessage
+  | SchemaEditRejectedMessage
+  | TableLockedMessage
+  | TableUnlockedMessage
+  | TableLockDeniedMessage;
 
 export function isClientMessage(value: unknown): value is ClientMessage {
   if (typeof value !== "object" || value === null || !("type" in value)) {
@@ -121,6 +165,8 @@ export function isClientMessage(value: unknown): value is ClientMessage {
     type === "cursor:move" ||
     type === "schema:edit" ||
     type === "diagram:move" ||
-    type === "session:closed"
+    type === "session:closed" ||
+    type === "table:lock" ||
+    type === "table:unlock"
   );
 }

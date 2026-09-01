@@ -5,6 +5,7 @@ import { authenticateConnection } from "./services/auth";
 import { getToken } from "./services/getToken";
 import { handleProjectJoin, handleProjectLeave, handleDisconnect } from "./handlers/projectHandler";
 import { handleCursorMove, handleSchemaEdit, handleDiagramMove, handleSessionClosed } from "./handlers/collabHandler";
+import { handleTableLock, handleTableUnlock } from "./handlers/tableLockHandler";
 import { registerConnection, removeConnection } from "./utils/roomManager";
 import { colorForUser } from "./utils/roomManager";
 import { env } from "./config/env";
@@ -86,7 +87,7 @@ wss.on("connection", (socket: HeartbeatSocket, request) => {
 
     switch (parsed.type) {
       case "project:join":
-        handleProjectJoin(socket, parsed);
+        void handleProjectJoin(socket, parsed);
         break;
       case "project:leave":
         handleProjectLeave(socket, parsed);
@@ -95,7 +96,7 @@ wss.on("connection", (socket: HeartbeatSocket, request) => {
         handleCursorMove(socket, parsed);
         break;
       case "schema:edit":
-        handleSchemaEdit(socket, parsed);
+        void handleSchemaEdit(socket, parsed);
         break;
       case "diagram:move":
         handleDiagramMove(socket, parsed);
@@ -103,12 +104,18 @@ wss.on("connection", (socket: HeartbeatSocket, request) => {
       case "session:closed":
         handleSessionClosed(socket, parsed);
         break;
+      case "table:lock":
+        void handleTableLock(socket, parsed);
+        break;
+      case "table:unlock":
+        void handleTableUnlock(socket, parsed);
+        break;
     }
   });
 
   socket.on("close", () => {
     console.log(`User disconnected: ${user.id}`);
-    handleDisconnect(socket);
+    void handleDisconnect(socket);
     removeConnection(socket);
   });
 

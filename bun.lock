@@ -113,6 +113,7 @@
       "name": "@repo/ws",
       "dependencies": {
         "@repo/backend-common": "*",
+        "@repo/database": "*",
         "@repo/types": "*",
         "dotenv": "^16.4.5",
         "ws": "^8.21.3",

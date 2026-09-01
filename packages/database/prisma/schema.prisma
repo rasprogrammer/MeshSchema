@@ -24,6 +24,8 @@ model User {
   oauthAccounts   OAuthAccount[]  
   projectMembers  ProjectMember[]
   projectMessages ProjectMessage[]
+  projectFavorites ProjectFavorite[]
+  tableLocks      TableLock[]
 
   @@map("users")
 }
@@ -60,21 +62,29 @@ model RefreshToken {
 }
 
 model Project {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  ownerId     String   @map("owner_id")
-  isPrivate   Boolean  @default(false) @map("is_private")
-  password    String?  @map("password")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  schema      Schema?
+  id           String    @id @default(uuid())
+  name         String
+  description  String?
+  ownerId      String    @map("owner_id")
+  isPrivate    Boolean   @default(false) @map("is_private")
+  password     String?   @map("password")
+  forkedFromId String?   @map("forked_from_id")
+  deletedAt    DateTime? @map("deleted_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  owner        User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  schema       Schema?
+  forkedFrom   Project?  @relation("ProjectFork", fields: [forkedFromId], references: [id], onDelete: SetNull)
+  forks        Project[] @relation("ProjectFork")
 
   projectMembers  ProjectMember[]
   projectMessages ProjectMessage[]
+  invites         ProjectInvite[]
+  favorites       ProjectFavorite[]
+  tableLocks      TableLock[]
 
   @@index([ownerId])
+  @@index([deletedAt])
   @@map("projects")
 }
 
@@ -119,7 +129,7 @@ model ProjectMember {
   id        String  @id  @default(uuid())
   projectId String
   userId    String
-  role      ProjectRole    @default(MEMBER)  // OWNER, ADMIN, MEMBER
+  role      ProjectRole    @default(VIEWER)  // OWNER, EDITOR, VIEWER
   joinedAt  DateTime    @default(now()) @map("joined_at")
 
   project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -127,6 +137,54 @@ model ProjectMember {
 
   @@map("project_members") 
   @@unique([projectId, userId])
+}
+
+model ProjectInvite {
+  id        String       @id @default(uuid())
+  projectId String       @map("project_id")
+  email     String
+  role      ProjectRole  @default(VIEWER)
+  token     String       @unique
+  status    InviteStatus @default(PENDING)
+  invitedBy String       @map("invited_by")
+  expiresAt DateTime     @map("expires_at")
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([email])
+  @@map("project_invites")
+}
+
+model ProjectFavorite {
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_favorites")
+}
+
+/// A soft, per-table "checkout" lock — enforced identically by the REST API
+/// and the websocket gateway so a user can't bypass it by only using one.
+model TableLock {
+  id         String   @id @default(uuid())
+  projectId  String   @map("project_id")
+  tableName  String   @map("table_name")
+  userId     String   @map("user_id")
+  acquiredAt DateTime @default(now()) @map("acquired_at")
+  expiresAt  DateTime @map("expires_at")
+
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, tableName])
+  @@map("table_locks")
 }
 
 model ProjectMessage {
@@ -147,9 +205,15 @@ model ProjectMessage {
 
 
 enum ProjectRole {
-  OWNER 
-  ADMIN 
-  MEMBER
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
 }
 
 enum MessageType {

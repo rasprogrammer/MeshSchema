@@ -4,6 +4,8 @@ import type { CollabUser, ServerMessage } from "@repo/types";
 interface ConnectionState {
   user: CollabUser;
   roomId: string | null;
+  /** Real project id this connection is authorized against, if any (see project:join). */
+  projectId: string | null;
 }
 
 /** roomId → set of sockets in that room */
@@ -33,7 +35,7 @@ export function colorForUser(userId: string): string {
 }
 
 export function registerConnection(socket: WebSocket, user: CollabUser): void {
-  connectionState.set(socket, { user, roomId: null });
+  connectionState.set(socket, { user, roomId: null, projectId: null });
 }
 
 export function getConnectionState(socket: WebSocket): ConnectionState | undefined {
@@ -86,5 +88,12 @@ export function broadcastToRoom(
     if (client.readyState === WebSocket.OPEN) {
       client.send(data);
     }
+  }
+}
+
+/** Sends a message to a single socket only — used for rejections/denials that shouldn't broadcast. */
+export function sendTo(socket: WebSocket, message: ServerMessage): void {
+  if (socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify(message));
   }
 }

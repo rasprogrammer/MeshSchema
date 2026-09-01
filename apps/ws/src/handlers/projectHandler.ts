@@ -1,5 +1,5 @@
 import type { WebSocket } from "ws";
-import type { ClientMessage, ProjectJoinedMessage, ProjectLeftMessage } from "@repo/types";
+import type { ClientMessage, ProjectJoinedMessage, ProjectJoinErrorMessage, ProjectLeftMessage } from "@repo/types";
 import {
   broadcastToRoom,
   colorForUser,
@@ -7,14 +7,28 @@ import {
   joinRoom,
   leaveRoom,
   peersInRoom,
+  sendTo,
 } from "../utils/roomManager";
+import { getProjectRole } from "../services/permissions";
+import { releaseAllLocksForUser } from "../services/locks";
 
-export function handleProjectJoin(
+export async function handleProjectJoin(
   socket: WebSocket,
   message: Extract<ClientMessage, { type: "project:join" }>
-): void {
+): Promise<void> {
   const state = getConnectionState(socket);
   if (!state) return;
+
+  // If the client tells us which real project this session belongs to, verify
+  // access up front so an unauthorized user can't even join the room.
+  if (message.projectId) {
+    const role = await getProjectRole(message.projectId, state.user.id);
+    if (!role) {
+      sendTo(socket, { type: "project:join_error", error: "You do not have access to this project" } satisfies ProjectJoinErrorMessage);
+      return;
+    }
+    state.projectId = message.projectId;
+  }
 
   const collabUser = { ...state.user, color: colorForUser(state.user.id) };
   state.user = collabUser;
@@ -52,13 +66,21 @@ export function handleProjectLeave(
   );
 }
 
-/** Called on socket close — cleans up whichever room the connection was in. */
-export function handleDisconnect(socket: WebSocket): void {
+/** Called on socket close — cleans up whichever room the connection was in, and releases any table locks it held. */
+export async function handleDisconnect(socket: WebSocket): Promise<void> {
   const state = getConnectionState(socket);
-  if (!state?.roomId) return;
-  broadcastToRoom(
-    state.roomId,
-    { type: "presence:leave", userId: state.user.id },
-    socket
-  );
+  if (!state) return;
+
+  if (state.roomId) {
+    broadcastToRoom(
+      state.roomId,
+      { type: "presence:leave", userId: state.user.id },
+      socket
+    );
+
+    const released = await releaseAllLocksForUser(state.user.id);
+    for (const lock of released) {
+      broadcastToRoom(state.roomId, { type: "table:unlocked", tableName: lock.tableName });
+    }
+  }
 }

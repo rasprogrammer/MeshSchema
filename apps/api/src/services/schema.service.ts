@@ -1,11 +1,11 @@
 import { schemaRepository } from "../repositories/schema.repository";
-import { projectService } from "./project.service";
 import { dbmlService } from "./dbml.service";
 import { NotFoundError } from "../utils/AppError";
+import { requireProjectRole } from "./projectAccess.service";
 import { UpdateSchemaInput } from "../validators/schema.validator";
 
 async function getSchemaOrThrow(projectId: string, userId: string) {
-  await projectService.assertOwnership(projectId, userId);
+  await requireProjectRole(projectId, userId, "VIEWER");
   const schema = await schemaRepository.findByProjectId(projectId);
   if (!schema) throw new NotFoundError("Schema not found for this project");
   return schema;
@@ -17,7 +17,7 @@ export const schemaService = {
   },
 
   async update(projectId: string, userId: string, input: UpdateSchemaInput) {
-    await projectService.assertOwnership(projectId, userId);
+    await requireProjectRole(projectId, userId, "EDITOR");
 
     if (input.dbml.trim().length > 0) {
       dbmlService.validate(input.dbml);

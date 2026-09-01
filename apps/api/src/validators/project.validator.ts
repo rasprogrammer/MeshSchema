@@ -26,6 +26,17 @@ export const createWithStarterTemplateSchema = z.object({
   description: projectDescriptionSchema
 })
 
+export const listProjectsQuerySchema = z.object({
+  search: z.string().max(120).optional(),
+  sort: z.enum(["name", "createdAt", "updatedAt"]).optional(),
+  order: z.enum(["asc", "desc"]).optional(),
+  favorite: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
+});
+
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
+export type ListProjectsQuery = z.infer<typeof listProjectsQuerySchema>;
 export type createWithStarterTemplateInput = z.infer<typeof createWithStarterTemplateSchema>;

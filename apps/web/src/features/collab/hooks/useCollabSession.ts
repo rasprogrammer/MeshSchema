@@ -27,25 +27,36 @@ interface UseCollabSessionResult {
   onSessionClosed: (cb: () => void) => () => void;
   /** Subscribe to peer join events. */
   onPeerJoin: (cb: (peer: PeerState) => void) => () => void;
+  /** Subscribe to a server-side rejection of an edit you sent (permission downgrade, e.g.). */
+  onSchemaEditRejected: (cb: (reason: string) => void) => () => void;
+  /** Checkout a table before editing it; resolves once locked/unlocked/denied is known. */
+  acquireTableLock: (tableName: string) => void;
+  releaseTableLock: (tableName: string) => void;
+  /** tableName -> userId holding the lock. */
+  lockedTables: Record<string, string>;
+  onTableLockDenied: (cb: (tableName: string, reason: string) => void) => () => void;
 }
 
 const CURSOR_THROTTLE_MS = 40;
 
-export function useCollabSession(roomId: string | null, enabled: boolean = true): UseCollabSessionResult {
+export function useCollabSession(roomId: string | null, enabled: boolean = true, projectId?: string | null): UseCollabSessionResult {
   const [peers, setPeers] = useState<Record<string, PeerState>>({});
   const [connected, setConnected] = useState(false);
+  const [lockedTables, setLockedTables] = useState<Record<string, string>>({});
   const lastSentRef = useRef(0);
   const remoteEditListeners = useRef(new Set<(dbml: string) => void>());
   const remoteDiagramListeners = useRef(new Set<(changes: any[]) => void>());
   const sessionClosedListeners = useRef(new Set<() => void>());
+  const schemaEditRejectedListeners = useRef(new Set<(reason: string) => void>());
+  const tableLockDeniedListeners = useRef(new Set<(tableName: string, reason: string) => void>());
   const peerJoinListeners = useRef(new Set<(peer: PeerState) => void>());
   const roomIdRef = useRef(roomId);
   roomIdRef.current = roomId;
 
   const joinProject = useCallback(() => {
     if (!roomId) return;
-    getCollabSocket().send({ type: "project:join", roomId: roomId });
-  }, [roomId]);
+    getCollabSocket().send({ type: "project:join", roomId, projectId: projectId ?? undefined });
+  }, [roomId, projectId]);
 
   useEffect(() => {
     if (!enabled || !roomId) {
@@ -104,6 +115,26 @@ export function useCollabSession(roomId: string | null, enabled: boolean = true)
         }
         case "session:closed": {
           sessionClosedListeners.current.forEach((cb) => cb());
+          break;
+        }
+        case "schema:edit_rejected": {
+          schemaEditRejectedListeners.current.forEach((cb) => cb(message.reason));
+          break;
+        }
+        case "table:locked": {
+          setLockedTables((prev) => ({ ...prev, [message.tableName]: message.userId }));
+          break;
+        }
+        case "table:unlocked": {
+          setLockedTables((prev) => {
+            const next = { ...prev };
+            delete next[message.tableName];
+            return next;
+          });
+          break;
+        }
+        case "table:lock_denied": {
+          tableLockDeniedListeners.current.forEach((cb) => cb(message.tableName, message.reason));
           break;
         }
       }
@@ -169,6 +200,24 @@ export function useCollabSession(roomId: string | null, enabled: boolean = true)
     return () => peerJoinListeners.current.delete(cb);
   }, []);
 
+  const onSchemaEditRejected = useCallback((cb: (reason: string) => void) => {
+    schemaEditRejectedListeners.current.add(cb);
+    return () => schemaEditRejectedListeners.current.delete(cb);
+  }, []);
+
+  const onTableLockDenied = useCallback((cb: (tableName: string, reason: string) => void) => {
+    tableLockDeniedListeners.current.add(cb);
+    return () => tableLockDeniedListeners.current.delete(cb);
+  }, []);
+
+  const acquireTableLock = useCallback((tableName: string) => {
+    getCollabSocket().send({ type: "table:lock", tableName });
+  }, []);
+
+  const releaseTableLock = useCallback((tableName: string) => {
+    getCollabSocket().send({ type: "table:unlock", tableName });
+  }, []);
+
   return { 
     peers: Object.values(peers), 
     connected, 
@@ -179,6 +228,11 @@ export function useCollabSession(roomId: string | null, enabled: boolean = true)
     onRemoteSchemaEdit, 
     onRemoteDiagramMove,
     onSessionClosed,
-    onPeerJoin 
+    onPeerJoin,
+    onSchemaEditRejected,
+    acquireTableLock,
+    releaseTableLock,
+    lockedTables,
+    onTableLockDenied,
   };
 }
