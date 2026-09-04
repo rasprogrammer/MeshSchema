@@ -1,8 +1,8 @@
 import axios, { AxiosError, AxiosInstance } from "axios";
 import { useAuthStore } from "@/store/auth.store";
 
-export const baseURL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
-export const WS_URL = (process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:4001").replace(/\/$/, "");
+export const baseURL = process.env.NEXT_PUBLIC_API_URL;
+export const WS_URL = (process.env.NEXT_PUBLIC_WS_URL!).replace(/\/$/, "");
 
 // `withCredentials: true` sends the httpOnly access/refresh cookies set by
 // the backend on every request — no Authorization header needed, and the

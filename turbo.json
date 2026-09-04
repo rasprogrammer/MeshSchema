@@ -26,9 +26,16 @@
       "cache": false,
       "persistent": true
     },
-    "start": {
+    "start:frontend": {
       "dependsOn": ["^build"],
-      "cache": false,
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "env": [
+        "MY_TEST_VAR",
+        "NEXT_PUBLIC_API_URL",
+        "NEXT_PUBLIC_WS_URL",
+        "NODE_ENV"
+      ],
+      "outputs": [".next/**", "!.next/cache/**"],
       "persistent": true
     },
     "generate": {
